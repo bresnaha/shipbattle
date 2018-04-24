@@ -12,6 +12,9 @@
 #define SHIP_MESSAGE_LENGTH 40
 #define BOMB_MESSAGE_LENGTH 10
 
+#define WAIT_INIT 30
+#define WAIT_TURN 15
+
 #define NUMBER_SHIPS 5
 
 #define SHIP_HORIZONTAL 0
@@ -114,23 +117,17 @@ void thread_moderate_match(void* args);
 */
 void thread_player_listener(void* args);
 
-/*
-   alternates between writing to both players, runs as a thread function
-    for the lifespan of the shorter player's connection
-    return: none
-*/
-void thread_players_writer(void* args);
-
-
 
 //    THREAD HELPER FUNCTIONS
+
+int open_connection_listner();
 
 /*
    listens for a connection, initializes a user_t by puting connection's
     ip_address and socket
-    return: a user_t that holds the connection information
+    return: none
  */
-user_t* connection_listner();
+void connection_listner();
 
 
 
@@ -159,6 +156,8 @@ bool write(player_t player, char* message, int length);
 */
 bool time_out();
 
+void set_expire_time();
+
 /*
    picks a random move on the board
     return: a bomb_t, indicates a bomb
@@ -170,3 +169,5 @@ bomb_t generate_random_bomb();
     return: true if game is on-going/has no winner
  */
 int game_not_over();
+
+double get_current_time_ms();
