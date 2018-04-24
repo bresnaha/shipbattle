@@ -21,7 +21,7 @@
 // ENUM TYPES ON THE ARRAY REPRESENTATIONS
 #define SEA 0
 #define SHIP_PRESENT 1
-#define BOMBED 5
+#define BOMB_PRESENT 5
 
 #define PADDING_LENGTH 1
 #define USERNAME_LENGTH 10
@@ -44,8 +44,14 @@ typedef struct player{
   int board[BOARD_SIZE][BOARD_SIZE];
   char ip_address[IP_LENGTH];
   int socket;
+  // read status
+  pthread_mutex_lock_t lock;
+  char* incoming_message;
+  bool has_new_message;
+  bool live;
 } player_t;
 
+int SHIP_SIZES = {2, 3, 3, 4, 5};
 
 //   USER-BASED FUNCTIONS
 
@@ -60,6 +66,9 @@ void initialize_player(player_t player, int socket, char* ip_address);
     return: true if player has successfully been initialized
  */
 bool intialize_board(player_t player, ship_t ships[]);
+
+
+int extract_int (char* message, int index, int length);
 
 /*
    parses a message into a move (either a bomb or ship placement)
@@ -85,15 +94,15 @@ bool is_valid_move(player_t player, bomb_t bomb, ship_t ships[]);
    put a ship onto a player's board
     return: nothing
 */
-void put_ships(user_t user. ship_t ships[]);
+void put_ships(player_t player. ship_t* ships);
 
-void put_bomb(user_t, bomb_t* bomb);
+void put_bomb(player_t player, bomb_t* bomb);
 
 
 //   THREAD FUNCTIONS
 
 /*
-   initialize a match
+   initialize and moderate a match between two opponents
     return:
  */
 void thread_moderate_match(void* args);
@@ -138,7 +147,7 @@ char* listen(int length);
     returns: a bool, whether the message wrote successfully
     *false reutrn value probably means connection failed
  */
-bool write(int length);
+bool write(player_t player, char* message, int length);
 
 
 
@@ -158,6 +167,6 @@ bomb_t generate_random_bomb();
 
 /*
    checks whether a goal state has been reached
-    return: an int, indicates status of the game
+    return: true if game is on-going/has no winner
  */
-bool game_over();
+int game_not_over();
