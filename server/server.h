@@ -62,7 +62,7 @@ int SHIP_SIZES = {2, 3, 3, 4, 5};
    initializes the user struct with empty fields but connection, e.g. socket and ip_address
     return: nothing
  */
-void initialize_player(player_t player, int socket, char* ip_address);
+void initialize_player(player_t* player, int socket, char* ip_address);
 
 /*
    populate user's game board; checks if move is valid, and times out on user
@@ -120,6 +120,10 @@ void thread_player_listener(void* args);
 
 //    THREAD HELPER FUNCTIONS
 
+/*
+   Opens a port to listen to incoming connections on
+    return: listening socket, an integer
+*/
 int open_connection_listner();
 
 /*
