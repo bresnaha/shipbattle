@@ -4,11 +4,11 @@
 // SHIPS
 #define MAX_CONNECTIONS 8
 
-#define SHIP_PADDING_SIZE 1
 #define SHIP_X_SIZE 1
 #define SHIP_Y_SIZE 1
 #define SHIP_LENGTH 1
 #define SHIP_ORIENTATION_SIZE 1
+#define SHIP_INFO_LENGTH 4
 #define SHIP_MESSAGE_LENGTH 40
 #define BOMB_MESSAGE_LENGTH 10
 
@@ -23,13 +23,14 @@
 #define SHIP_PRESENT 1
 #define BOMBED 5
 
+#define PADDING_LENGTH 1
 #define USERNAME_LENGTH 10
 #define IP_LENGTH 16
 
 typedef struct ship{
   int x;
   int y;
-  int orientation;
+  int is_vertical;
   int size;
 } ship_t;
 
@@ -41,7 +42,6 @@ typedef struct bomb{
 typedef struct player{
   char username[USERNAME_LENGTH];
   int board[BOARD_SIZE][BOARD_SIZE];
-  int ships_remaining;                // 0 if none, which is false
   char ip_address[IP_LENGTH];
   int socket;
 } player_t;
@@ -49,13 +49,11 @@ typedef struct player{
 
 //   USER-BASED FUNCTIONS
 
-void take_turn(player_t player);
-
 /*
    initializes the user struct with empty fields but connection, e.g. socket and ip_address
     return: nothing
  */
-void initialize_player(player_t player);
+void initialize_player(player_t player, int socket, char* ip_address);
 
 /*
    populate user's game board; checks if move is valid, and times out on user
@@ -65,9 +63,16 @@ bool intialize_board(player_t player, ship_t ships[]);
 
 /*
    parses a message into a move (either a bomb or ship placement)
+   type has to be sizeof(ships[NUMBER_SHIPS]) or sizeof(bomb_t)!
     return: a boolean, whether move is a bomb == 1 (or ship == 0)
  */
-bool parse_message(char* message, bomb_t bomb, ship_t ships[]);
+bool parse_message(char* message, bool parse_bomb, void* type);
+
+/*
+   manages turn-taking for the specified player
+    return: none
+*/
+void take_turn(player_t player);
 
 /*
    validates a move
