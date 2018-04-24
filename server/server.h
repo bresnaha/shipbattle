@@ -1,6 +1,9 @@
+#include <pthread.h>
 
 // MACROS
 // SHIPS
+#define MAX_CONNECTIONS 8
+
 #define SHIP_PADDING_SIZE 1
 #define SHIP_X_SIZE 1
 #define SHIP_Y_SIZE 1
@@ -50,18 +53,25 @@ typedef struct user{
  */
 void initialize_user(user_t *user);
 
+/*
+   parses a message into a move (either a bomb or ship placement)
+    return: a boolean, whether move is a bomb == 1 (or ship == 0)
+ */
+bool parse_message(char* message, bomb_t bomb, ship_t ship);
+
+/* 
+   validates a move
+    always take a user, and a bomb OR a ship struct at a time
+    return: a boolean, whether a move is valid
+ */
+bool is_valid_move(user_t user, bomb_t bomb, ship_t ship);
+
 /* 
    put a ship onto a player's board
     return: nothing
 */
 void put_ship(user_t user, ship_t ship);
 
-/* 
-   validates a move
-    type 
-    return: a boolean, whether a move is valid
- */
-bool is_valid_move(int type, int x, int y, char* extra);
 
 
 
@@ -71,7 +81,7 @@ bool is_valid_move(int type, int x, int y, char* extra);
    initialize a match
     return: 
  */
-void thread_initialize_match(void* args);
+void thread_moderate_match(void* args);
 
 /* 
    manages incoming messages from a single player, runs as a thread function  
@@ -86,6 +96,17 @@ void thread_player_listener(void* args);
     return: none
 */
 void thread_players_writer(void* args);
+
+
+
+//    THREAD HELPER FUNCTIONS
+
+/* 
+   listens for a connection, initializes a user_t by puting connection's 
+    ip_address and socket 
+    return: a user_t that holds the connection information
+ */
+user_t* connection_listner();
 
 
 
@@ -120,8 +141,11 @@ bool timed_out();
 */
 bomb_t generate_random_bomb();
 
-
-
+/*
+   checks whether a goal state has been reached
+    return: a bool, game_over?
+ */
+bool game_over();
 
 
 
