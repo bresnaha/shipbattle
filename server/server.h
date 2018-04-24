@@ -12,6 +12,8 @@
 #define SHIP_MESSAGE_LENGTH 40
 #define BOMB_MESSAGE_LENGTH 10
 
+#define NUMBER_SHIPS 5
+
 #define SHIP_HORIZONTAL 0
 #define SHIP_VERTICAL 1
 
@@ -36,55 +38,63 @@ typedef struct bomb{
   int y;
 } bomb_t;
 
-typedef struct user{
+typedef struct player{
   char username[USERNAME_LENGTH];
   int board[BOARD_SIZE][BOARD_SIZE];
   int ships_remaining;                // 0 if none, which is false
   char ip_address[IP_LENGTH];
   int socket;
-} user_t;
+} player_t;
 
 
 //   USER-BASED FUNCTIONS
 
-/* 
-   initializes the user struct
+void take_turn(player_t player);
+
+/*
+   initializes the user struct with empty fields but connection, e.g. socket and ip_address
     return: nothing
  */
-void initialize_user(user_t *user);
+void initialize_player(player_t player);
+
+/*
+   populate user's game board; checks if move is valid, and times out on user
+    return: true if player has successfully been initialized
+ */
+bool intialize_board(player_t player, ship_t ships[]);
 
 /*
    parses a message into a move (either a bomb or ship placement)
     return: a boolean, whether move is a bomb == 1 (or ship == 0)
  */
-bool parse_message(char* message, bomb_t bomb, ship_t ship);
+bool parse_message(char* message, bomb_t bomb, ship_t ships[]);
 
-/* 
+/*
    validates a move
     always take a user, and a bomb OR a ship struct at a time
     return: a boolean, whether a move is valid
  */
-bool is_valid_move(user_t user, bomb_t bomb, ship_t ship);
+bool is_valid_move(player_t player, bomb_t bomb, ship_t ships[]);
 
-/* 
+/*
    put a ship onto a player's board
     return: nothing
 */
-void put_ship(user_t user, ship_t ship);
+void put_ships(user_t user. ship_t ships[]);
 
-
+void put_bomb(user_t, bomb_t* bomb);
 
 
 //   THREAD FUNCTIONS
 
-/* 
+/*
    initialize a match
-    return: 
+    return:
  */
 void thread_moderate_match(void* args);
 
-/* 
-   manages incoming messages from a single player, runs as a thread function  
+/*
+   manages incoming messages from a single player, runs as a thread function
     for the lifespan of the player's connection
     return: none
 */
@@ -101,9 +111,9 @@ void thread_players_writer(void* args);
 
 //    THREAD HELPER FUNCTIONS
 
-/* 
-   listens for a connection, initializes a user_t by puting connection's 
-    ip_address and socket 
+/*
+   listens for a connection, initializes a user_t by puting connection's
+    ip_address and socket
     return: a user_t that holds the connection information
  */
 user_t* connection_listner();
@@ -133,7 +143,7 @@ bool write(int length);
    checks timestamp and determines if current user has timed-out
     return: boolean, whether user has timed-out
 */
-bool timed_out();
+bool time_out();
 
 /*
    picks a random move on the board
@@ -143,10 +153,6 @@ bomb_t generate_random_bomb();
 
 /*
    checks whether a goal state has been reached
-    return: a bool, game_over?
+    return: an int, indicates status of the game
  */
 bool game_over();
-
-
-
-  
