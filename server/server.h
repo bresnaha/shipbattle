@@ -81,7 +81,7 @@ bool parse_message(char* message, bool parse_bomb, void* type);
    manages turn-taking for the specified player
     return: none
 */
-void take_turn(player_t player);
+char* take_turn(player_t player);
 
 /*
    validates a move
