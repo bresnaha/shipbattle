@@ -1,8 +1,16 @@
+#include <arpa/inet.h>
+#include <ctype.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <rand.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <unistd.h>
 #include "server.h"
 
 /*
@@ -11,12 +19,12 @@
  */
 
 player_t player1;
-player_t player1;
+player_t player2;
 double turn_expire_time;
 int listener_socket;
-pthread_t match_lobby = PTHREAD_INITIALIZER;
-pthread_t player_1_listener = PTHREAD_INITIALIZER;
-pthread_t player_2_listener = PTHREAD_INITIALIZER;
+pthread_t match_lobby;
+pthread_t player_1_listener;
+pthread_t player_2_listener;
 
 int main(int args, char** argv){
 
@@ -26,8 +34,8 @@ int main(int args, char** argv){
   connection_listner(&player2);
 
   // create thread for lobby
-  pthread_create(match_lobby, pthread_moderate_match, NULL, NULL);
-  pthread_join(match_lobby);
+  pthread_create(&match_lobby, NULL, thread_moderate_match, NULL);
+  pthread_join(match_lobby, NULL);
 
   return 0;
 }
@@ -37,17 +45,17 @@ int main(int args, char** argv){
       Thread functions
 */
 
-void thread_moderate_match(void* args) {
+void* thread_moderate_match(void* args) {
   // create all required threads
-  pthread_create(player_1_listener, thread_player_listener, player1, NULL);
-  pthread_create(player_2_listener, thread_player_listener, player2, NULL);
+  pthread_create(&player_1_listener, NULL, thread_player_listener, player1);
+  pthread_create(&player_2_listener, NULL, thread_player_listener, player2);
 
   // initialize user II: place ships from both players
   bool player_1_initialized = false;
   bool player_2_initialized = false;
 
   // wait for board setup from both players
-  while (!player_1_initailized || !player_2_initialized){
+  while (!player_1_initialized || !player_2_initialized){
     if (player_1_initialized)
       player_2_initialized = initialize_board(player2);
     else player_1_initialized = initialize_board(player1);
@@ -60,54 +68,54 @@ void thread_moderate_match(void* args) {
 
   // check for exit state before next player's turn
   while (!(exit_state = game_not_over())) {
-    write(player1, message, SHIP_MESSAGE_LENGTH);
+    write_to_socket(player1, message, SHIP_MESSAGE_LENGTH);
     message = take_turn(player1);
     player_1_turn = !player_1_turn;
     // check for exit state before next player's turn
     if (!(exit_state = game_not_over())) break;
-    write(player2, message, SHIP_MESSAGE_LENGTH);
+    write_to_socket(player2, message, SHIP_MESSAGE_LENGTH);
     message = take_turn(player2);
   }
 
   // send username of winner
   message = player_1_turn? player2.username : player1.username;
-  write(player1, message, SHIP_MESSAGE_LENGTH);
-  write(player2, message, SHIP_MESSAGE_LENGTH);
+  write_to_socket(player1, message, SHIP_MESSAGE_LENGTH);
+  write_to_socket(player2, message, SHIP_MESSAGE_LENGTH);
 
   free(message);
 
   // TODO: collect threads
 }
 
-void thread_player_listener(void* args) {
+void* thread_player_listener(void* args) {
   // TODO: some major work needs to be done here
-  player_t* p = (player_t*) args;
+  player_t* player = (player_t*) args;
   while (p->live) {
     sleep(0);
     // don't read from socket if existing buffer hasn't been read; buffer overrwrite
-    if (!has_new_message) {
-      char* message = SHIP_MESSAGE_LENGTH;
-      pthread_mutex_lock(p->lock);
+    if (!player->has_new_message) {
+      char* message = calloc(sizeof(char), SHIP_MESSAGE_LENGTH);
+      pthread_mutex_lock(&p->lock);
       int bytes_read = read(p->socket, message, sizeof(char)*SHIP_MESSAGE_LENGTH);
       if (bytes_read == -1)
         p->live = false;
       // bookkeeping
-      has_new_message = true;
-      pthread_mutex_unlock(p->lock);
+      player->has_new_message = true;
+      pthread_mutex_unlock(&p->lock);
     }
   }
 }
 
-bool write(player_t player, char* message, int length) {
+bool write_to_socket(player_t player, char* message, int length) {
   if (write(player.socket, message, sizeof(char)*length) == -1)
     return false;
   return true;
 }
 
-char* read_next() {
+char* read_next(player_t player) {
   pthread_mutex_lock(&player.lock);
   char* message = strndup(player.incoming_message, SHIP_MESSAGE_LENGTH);
-  has_new_message = false;
+  player.has_new_message = false;
   pthread_mutex_unlock(&player.lock);
   return message;
 }
@@ -133,25 +141,24 @@ int open_connection_listner() {
     if (getsockname(s, (struct sockaddr *)&sin, &len) == -1)
       return -1;
 
-    child_listener_port = ntohs(sin.sin_port);
-
     return s;
 }
 
 void connection_listener(player_t* player) {
 
   while (!player->live) {
+      
+    if(listen(listener_socket, 1))  //error checking
       continue;
-      if(listen(listener_socket, 1))  //error checking
 
     struct sockaddr_in client_addr;
     socklen_t client_addr_length = sizeof(struct sockaddr_in);
 
-    int socket = accept(child_listener_socket, (struct sockaddr*)&client_addr, &client_addr_length);
+    int socket = accept(listener_socket, (struct sockaddr*)&client_addr, &client_addr_length);
     if(socket == -1)  // error checking
       continue;
 
-    initialize_player(player, strndup(read_next(), USERNAME_LENGTH), socket, NULL);
+    initialize_player(player, strndup(read_next(*player), USERNAME_LENGTH), socket, NULL);
   }
 }
 
@@ -176,7 +183,7 @@ void initialize_player(player_t* player, char* username, int socket, char* ip_ad
       player->board[i][j] = 0;
 
   // initialize mutex lock
-  pthread_mutex_init (player.lock);
+  pthread_mutex_init (&player->lock, NULL);
 }
 
 bool initialize_board(player_t player) {
@@ -186,11 +193,11 @@ bool initialize_board(player_t player) {
     sleep(1);
 
     if (player.has_new_message) {
-      char* message = read_next();
+      char* message = read_next(player);
 
       if (message != NULL) {
         ship_t ships[NUMBER_SHIPS];
-        parse_message(message, NULL, ships);
+        parse_message(message, NULL, &ships);
 
         if (is_valid_move(player, NULL, ships)) {
           put_ships(player, ships);
@@ -202,26 +209,24 @@ bool initialize_board(player_t player) {
   return false;
 }
 
-bool parse_message(char* message, bool parse_bomb, void* type) {
+bool parse_message(char* message, bomb_t* bomb, ship_t* ships) {
   // TODO: error checking to not overrun message
   // TODO: check for valid username
   int offset = USERNAME_LENGTH + PADDING_LENGTH;
   int i = offset;
 
-  if (parse_bomb) {// dealing with a bomb
+  if (bomb != NULL) {// dealing with a bomb
     // TODO: parse char to int
-    bomb_t* bomb = (bomb_t*) type;
     bomb->x = message[i++];
     bomb->y = message[i];
     return true;
 
   } // parse ship
-  ship_t* ships = (ship*) type;
   for (int j = 0; j < NUMBER_SHIPS; j++){
-    ships[j]->x = extract_int(message[i++], 1);
-    ships[j]->y = extract_int(message[i++], 1);
-    ships[j]->orientation = extract_int(message[i++], 1);
-    ships[j++]->size = extract_int(message[i++], 1);
+    ships[j]->x = extract_int(message, i++, 1);
+    ships[j]->y = extract_int(message, i++, 1);
+    ships[j]->orientation = extract_int(message, i++, 1);
+    ships[j++]->size = extract_int(message, i++, 1);
     i++;
   }
   return true;
@@ -235,19 +240,19 @@ char* take_turn(player_t player) {
     sleep(1);
     if (player.has_new_message) {
       // get new message
-      strncpy(message, read_next(), SHIP_MESSAGE_LENGTH);
+      strncpy(message, read_next(player), SHIP_MESSAGE_LENGTH);
 
       // parse message into a do-able action
       if (message != NULL){
         bomb_t bomb;
-        parse_message(message, bomb, NULL);
+        parse_message(message, &bomb, NULL);
 
         if (is_valid_move(player, bomb, NULL)) {
           put_bomb(player, bomb);
           return message;
           
         } else
-          write(player.socket, "SYSTEM   INV_MOVE", SHIP_MESSAGE_LENGTH);
+          write_to_socket(player.socket, "SYSTEM   INV_MOVE", SHIP_MESSAGE_LENGTH);
       }
     }
   }

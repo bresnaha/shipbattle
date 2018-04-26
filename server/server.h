@@ -49,13 +49,13 @@ typedef struct player{
   char ip_address[IP_LENGTH];
   int socket;
   // read status
-  pthread_mutex_lock_t lock;
+  pthread_mutex_t lock;
   char* incoming_message;
   bool has_new_message;
   bool live;
 } player_t;
 
-int SHIP_SIZES = {2, 3, 3, 4, 5};
+int SHIP_SIZES[] = {2, 3, 3, 4, 5};
 
 //   USER-BASED FUNCTIONS
 
@@ -63,13 +63,13 @@ int SHIP_SIZES = {2, 3, 3, 4, 5};
    initializes the user struct with empty fields but connection, e.g. socket and ip_address
     return: nothing
  */
-void initialize_player(player_t* player, int socket, char* ip_address);
+void initialize_player(player_t* player, char* username, int socket, char* ip_address);
 
 /*
    populate user's game board; checks if move is valid, and times out on user
     return: true if player has successfully been initialized
  */
-bool intialize_board(player_t player, ship_t ships[]);
+bool intialize_board(player_t player);
 
 
 int extract_int (char* message, int index, int length);
@@ -98,7 +98,7 @@ bool is_valid_move(player_t player, bomb_t bomb, ship_t ships[]);
    put a ship onto a player's board
     return: nothing
 */
-void put_ships(player_t player. ship_t* ships);
+void put_ships(player_t player, ship_t* ships);
 
 void put_bomb(player_t player, bomb_t* bomb);
 
@@ -138,18 +138,15 @@ void connection_listner();
 
 //    LISTENER/WRITER FUNCTIONS
 
-/*
-   listens for incoming messages from the player
-    return: a char*, a message size MESSAGE_LENGTH
- */
-char* listen(int length);
+char* read_next(player_t player);
+
 
 /*
    writes an outgoing message to a socket
     returns: a bool, whether the message wrote successfully
     *false reutrn value probably means connection failed
  */
-bool write(player_t player, char* message, int length);
+bool write_to_socket(player_t player, char* message, int length);
 
 
 
