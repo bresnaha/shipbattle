@@ -1,9 +1,5 @@
-#include <arpa/inet.h>
 #include <ctype.h>
-#include <netinet/in.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -12,6 +8,12 @@
 #include <string.h>
 #include <unistd.h>
 #include "server.h"
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
 
 /*
   main listens for incoming connections, initializes a lobby when
@@ -90,20 +92,21 @@ void* thread_moderate_match(void* args) {
 void* thread_player_listener(void* args) {
   // TODO: some major work needs to be done here
   player_t* player = (player_t*) args;
-  while (p->live) {
+  while (player->live) {
     sleep(0);
     // don't read from socket if existing buffer hasn't been read; buffer overrwrite
     if (!player->has_new_message) {
       char* message = calloc(sizeof(char), SHIP_MESSAGE_LENGTH);
-      pthread_mutex_lock(&p->lock);
-      int bytes_read = read(p->socket, message, sizeof(char)*SHIP_MESSAGE_LENGTH);
+      pthread_mutex_lock(&player->lock);
+      int bytes_read = read(player->socket, message, sizeof(char)*SHIP_MESSAGE_LENGTH);
       if (bytes_read == -1)
-        p->live = false;
+    	player->live = false;
       // bookkeeping
       player->has_new_message = true;
-      pthread_mutex_unlock(&p->lock);
+      pthread_mutex_unlock(&player->lock);
     }
   }
+  return 0;
 }
 
 bool write_to_socket(player_t player, char* message, int length) {
@@ -169,12 +172,12 @@ void connection_listener(player_t* player) {
 
 void initialize_player(player_t* player, char* username, int socket, char* ip_address) {
   // populate fields
-  player = {
+  player = (player_t*){
     .username = username,
     .ip_address = ip_address,
-    .socket = socket
-    .incoming_message = NULL,
-    .read = true,
+    .socket = socket,
+	.incoming_message = NULL,
+    .has_new_message = false,
     .live = true
   };
   // initialize board
@@ -211,7 +214,7 @@ bool initialize_board(player_t player) {
 
 bool parse_message(char* message, bomb_t* bomb, ship_t* ships) {
   // TODO: error checking to not overrun message
-  // TODO: check for valid username
+  // TODO: check for valid user-name
   int offset = USERNAME_LENGTH + PADDING_LENGTH;
   int i = offset;
 
@@ -225,7 +228,7 @@ bool parse_message(char* message, bomb_t* bomb, ship_t* ships) {
   for (int j = 0; j < NUMBER_SHIPS; j++){
     ships[j]->x = extract_int(message, i++, 1);
     ships[j]->y = extract_int(message, i++, 1);
-    ships[j]->orientation = extract_int(message, i++, 1);
+    ships[j]->is_vertical = (message[i++] == 'v')? 1 : 0;
     ships[j++]->size = extract_int(message, i++, 1);
     i++;
   }
@@ -355,17 +358,17 @@ int game_not_over(bool check_player_1) {
   bool player_has_ships = false;
 
   if (check_player_1)
-    for (int i = 0; i < BOARD_SIZE && !player_1_has_ships; i++)
-      for (int j = 0; j < BOARD_SIZE && !player_1_has_ships; j++)
+    for (int i = 0; i < BOARD_SIZE && !player_has_ships; i++)
+      for (int j = 0; j < BOARD_SIZE && !player_has_ships; j++)
         if(player1.board[i][j]) // true if there is a ship at i, j
           player_has_ships = true;
   else
-    for (int i = 0; i < BOARD_SIZE && !player_2_has_ships; i++)
-      for (int j = 0; j < BOARD_SIZE && !player_2_has_ships; j++)
+    for (int i = 0; i < BOARD_SIZE && !player_has_ships; i++)
+      for (int j = 0; j < BOARD_SIZE && !player_has_ships; j++)
         if(player2.board[i][j]) // true if there is a ship at i, j
           player_has_ships = true;
 
-  if (player_has_ships && player1_live)
+  if (player_has_ships)
     return 1;
   return 0;
 }
