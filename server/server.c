@@ -180,15 +180,18 @@ void initialize_player(player_t* player, char* username, int socket, char* ip_ad
 }
 
 bool initialize_board(player_t player) {
-  set_expire_time(WAIT_INIT); // set expiry time
-  while (!time_out()) { // TODO: borrow time_compare from Charlie
+  set_expire_time(WAIT_INIT); // set expiration
+
+  while (!time_out()) {
     sleep(1);
+
     if (player.has_new_message) {
       char* message = read_next();
 
       if (message != NULL) {
         ship_t ships[NUMBER_SHIPS];
         parse_message(message, NULL, ships);
+
         if (is_valid_move(player, NULL, ships)) {
           put_ships(player, ships);
           return true;
@@ -233,6 +236,7 @@ char* take_turn(player_t player) {
     if (player.has_new_message) {
       // get new message
       strncpy(message, read_next(), SHIP_MESSAGE_LENGTH);
+
       // parse message into a do-able action
       if (message != NULL){
         bomb_t bomb;
@@ -241,6 +245,7 @@ char* take_turn(player_t player) {
         if (is_valid_move(player, bomb, NULL)) {
           put_bomb(player, bomb);
           return message;
+          
         } else
           write(player.socket, "SYSTEM   INV_MOVE", SHIP_MESSAGE_LENGTH);
       }

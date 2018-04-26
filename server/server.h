@@ -1,39 +1,40 @@
 #include <pthread.h>
 
-// MACROS
-// SHIPS
+//    MACROS
+
 #define MAX_CONNECTIONS 8
 
+//  SHIPS
 #define SHIP_X_SIZE 1
 #define SHIP_Y_SIZE 1
 #define SHIP_LENGTH 1
 #define SHIP_ORIENTATION_SIZE 1
+#define SHIP_HORIZONTAL 0
+#define SHIP_VERTICAL 1
 #define SHIP_INFO_LENGTH 4
 #define SHIP_MESSAGE_LENGTH 40
 #define BOMB_MESSAGE_LENGTH 10
+#define NUMBER_SHIPS 5
 
+//  WAITING TIME
 #define WAIT_INIT 30
 #define WAIT_TURN 15
 
-#define NUMBER_SHIPS 5
-
-#define SHIP_HORIZONTAL 0
-#define SHIP_VERTICAL 1
-
+//  ARRAY REPRESENTATIONS
 #define BOARD_SIZE 10
-// ENUM TYPES ON THE ARRAY REPRESENTATIONS
 #define SEA 0
 #define SHIP_PRESENT 1
 #define BOMB_PRESENT 5
 
-#define PADDING_LENGTH 1
+//  CONNECTION
 #define USERNAME_LENGTH 10
+#define PADDING_LENGTH 1
 #define IP_LENGTH 16
 
 typedef struct ship{
   int x;
   int y;
-  int is_vertical;
+  bool is_vertical;
   int size;
 } ship_t;
 
