@@ -6,4 +6,4 @@ clean:
 	rm -f server
 
 client: client.c ui.c ui.h
-	$(CC) $(CFLAGS) -o server server.c -pthread
+	$(CC) $(CFLAGS) -pthread -o server server.c

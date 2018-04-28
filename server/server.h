@@ -44,9 +44,9 @@ typedef struct bomb{
 } bomb_t;
 
 typedef struct player{
-  char username[USERNAME_LENGTH];
+  char *username;
   int board[BOARD_SIZE][BOARD_SIZE];
-  char ip_address[IP_LENGTH];
+  char *ip_address;
   int socket;
   // read status
   pthread_mutex_t lock;
@@ -69,7 +69,7 @@ void initialize_player(player_t* player, char* username, int socket, char* ip_ad
    populate user's game board; checks if move is valid, and times out on user
     return: true if player has successfully been initialized
  */
-bool intialize_board(player_t player);
+bool initialize_board(player_t player);
 
 
 int extract_int (char* message, int index, int length);
@@ -79,7 +79,7 @@ int extract_int (char* message, int index, int length);
    type has to be sizeof(ships[NUMBER_SHIPS]) or sizeof(bomb_t)!
     return: a boolean, whether move is a bomb == 1 (or ship == 0)
  */
-bool parse_message(char* message, bool parse_bomb, void* type);
+bool parse_message(char* message, bomb_t* bomb, ship_t* ships);
 
 /*
    manages turn-taking for the specified player
@@ -92,7 +92,7 @@ char* take_turn(player_t player);
     always take a user, and a bomb OR a ship struct at a time
     return: a boolean, whether a move is valid
  */
-bool is_valid_move(player_t player, bomb_t bomb, ship_t ships[]);
+bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[]);
 
 /*
    put a ship onto a player's board
@@ -109,14 +109,14 @@ void put_bomb(player_t player, bomb_t* bomb);
    initialize and moderate a match between two opponents
     return:
  */
-void thread_moderate_match(void* args);
+void* thread_moderate_match(void* args);
 
 /*
    manages incoming messages from a single player, runs as a thread function
     for the lifespan of the player's connection
     return: none
 */
-void thread_player_listener(void* args);
+void* thread_player_listener(void* args);
 
 
 //    THREAD HELPER FUNCTIONS
@@ -125,14 +125,14 @@ void thread_player_listener(void* args);
    Opens a port to listen to incoming connections on
     return: listening socket, an integer
 */
-int open_connection_listner();
+int open_connection_listener();
 
 /*
    listens for a connection, initializes a user_t by puting connection's
     ip_address and socket
     return: none
  */
-void connection_listner();
+void connection_listener(player_t *player);
 
 
 
@@ -164,12 +164,12 @@ void set_expire_time();
    picks a random move on the board
     return: a bomb_t, indicates a bomb
 */
-bomb_t generate_random_bomb();
+bomb_t* generate_random_bomb();
 
 /*
    checks whether a goal state has been reached
     return: true if game is on-going/has no winner
  */
-int game_not_over();
+int game_not_over(bool check_player_1);
 
 double get_current_time_ms();
