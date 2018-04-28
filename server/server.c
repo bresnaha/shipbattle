@@ -90,6 +90,7 @@ void* thread_moderate_match(void* args) {
   free(message);
 
   // TODO: collect threads
+  return 0;
 }
 
 void* thread_player_listener(void* args) {
@@ -298,10 +299,16 @@ bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[]) {
         int y = ships[k].y;
         if (ships[k].is_vertical) { // place ships vertically
           for (int i = 0; i < ships[k].size; i++)
-            temp_sea[x][y++]++;
+            if (y >= BOARD_SIZE)
+              return false;
+            else
+              temp_sea[x][y++]++;
         } else
           for (int i = 0; i < ships[k].size; i++)
-            temp_sea[x++][y]++;
+            if (x >= BOARD_SIZE)
+              return false;
+            else
+              temp_sea[x++][y]++;
       }
 
       // if any spot has 2 pieces, return false
