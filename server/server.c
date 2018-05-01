@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "server.h"
 
+#include <sys/time.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -31,9 +32,9 @@ pthread_t player_2_listener;
 int main(int args, char** argv){
 
   // gather two incoming connections
-  open_listener();
-  connection_listner(&player1);
-  connection_listner(&player2);
+  open_connection_listener();
+  connection_listener(&player1);
+  connection_listener(&player2);
 
   // create thread for lobby
   pthread_create(&match_lobby, NULL, thread_moderate_match, NULL);
@@ -49,8 +50,8 @@ int main(int args, char** argv){
 
 void* thread_moderate_match(void* args) {
   // create all required threads
-  pthread_create(&player_1_listener, NULL, thread_player_listener, player1);
-  pthread_create(&player_2_listener, NULL, thread_player_listener, player2);
+  pthread_create(&player_1_listener, NULL, thread_player_listener, &player1);
+  pthread_create(&player_2_listener, NULL, thread_player_listener, &player2);
 
   // initialize user II: place ships from both players
   bool player_1_initialized = false;
@@ -69,12 +70,14 @@ void* thread_moderate_match(void* args) {
   bool player_1_turn = true;
 
   // check for exit state before next player's turn
-  while (!(exit_state = game_not_over())) {
+  while (!(exit_state = game_not_over(player_1_turn))) {
     write_to_socket(player1, message, SHIP_MESSAGE_LENGTH);
     message = take_turn(player1);
     player_1_turn = !player_1_turn;
+    
     // check for exit state before next player's turn
-    if (!(exit_state = game_not_over())) break;
+    if (!(exit_state = game_not_over(player_1_turn)))
+      break;
     write_to_socket(player2, message, SHIP_MESSAGE_LENGTH);
     message = take_turn(player2);
   }
@@ -87,6 +90,7 @@ void* thread_moderate_match(void* args) {
   free(message);
 
   // TODO: collect threads
+  return 0;
 }
 
 void* thread_player_listener(void* args) {
@@ -123,7 +127,7 @@ char* read_next(player_t player) {
   return message;
 }
 
-int open_connection_listner() {
+int open_connection_listener() {
     int s = socket(AF_INET, SOCK_STREAM, 0);
     if(s == -1) {
       perror("socket failed");
@@ -171,15 +175,14 @@ void connection_listener(player_t* player) {
 */
 
 void initialize_player(player_t* player, char* username, int socket, char* ip_address) {
-  // populate fields
-  player = (player_t*){
-    .username = username,
-    .ip_address = ip_address,
-    .socket = socket,
-	.incoming_message = NULL,
-    .has_new_message = false,
-    .live = true
-  };
+  // initialize fields
+  player->socket = socket;
+  player->incoming_message = NULL;
+  player->has_new_message = false;
+  player->live = true;
+  player->ip_address = strndup(ip_address, IP_LENGTH);
+  player->username = strndup(username, USERNAME_LENGTH);
+  
   // initialize board
   for (int i = 0; i < BOARD_SIZE; i++)
     for (int j = 0; j < BOARD_SIZE; j++)
@@ -200,7 +203,7 @@ bool initialize_board(player_t player) {
 
       if (message != NULL) {
         ship_t ships[NUMBER_SHIPS];
-        parse_message(message, NULL, &ships);
+        parse_message(message, NULL, ships);
 
         if (is_valid_move(player, NULL, ships)) {
           put_ships(player, ships);
@@ -226,10 +229,10 @@ bool parse_message(char* message, bomb_t* bomb, ship_t* ships) {
 
   } // parse ship
   for (int j = 0; j < NUMBER_SHIPS; j++){
-    ships[j]->x = extract_int(message, i++, 1);
-    ships[j]->y = extract_int(message, i++, 1);
-    ships[j]->is_vertical = (message[i++] == 'v')? 1 : 0;
-    ships[j++]->size = extract_int(message, i++, 1);
+    ships[j].x = extract_int(message, i++, 1);
+    ships[j].y = extract_int(message, i++, 1);
+    ships[j].is_vertical = (message[i++] == 'v')? 1 : 0;
+    ships[j++].size = extract_int(message, i++, 1);
     i++;
   }
   return true;
@@ -250,29 +253,29 @@ char* take_turn(player_t player) {
         bomb_t bomb;
         parse_message(message, &bomb, NULL);
 
-        if (is_valid_move(player, bomb, NULL)) {
-          put_bomb(player, bomb);
+        if (is_valid_move(player, &bomb, NULL)) {
+          put_bomb(player, &bomb);
           return message;
           
         } else
-          write_to_socket(player.socket, "SYSTEM   INV_MOVE", SHIP_MESSAGE_LENGTH);
+          write_to_socket(player, "SYSTEM   INV_MOVE", SHIP_MESSAGE_LENGTH);
       }
     }
   }
   // timed_out: take turn for player
-  bomb_t bomb;
-  put_bomb(player, generate_random_bomb());
+  bomb_t *bomb = generate_random_bomb();
+  put_bomb(player, bomb);
   // send other player about random bomb
   strncpy(message, player.username, USERNAME_LENGTH);
-  message[USERNAME_LENGTH+PADDING_LENGTH] = bomb.x;
-  message[USERNAME_LENGTH+PADDING_LENGTH+SHIP_X_SIZE] = bomb.x;
+  message[USERNAME_LENGTH+PADDING_LENGTH] = bomb->x;
+  message[USERNAME_LENGTH+PADDING_LENGTH+SHIP_X_SIZE] = bomb->x;
   return message;
 }
 
-bool is_valid_move(player_t player, bomb_t bomb, ship_t ships[]) {
+bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[]) {
   // bomb check
   if (bomb != NULL)
-    return bomb.x < BOARD_SIZE && bomb.y < BOARD_SIZE;
+    return bomb->x < BOARD_SIZE && bomb->y < BOARD_SIZE;
 
   // ships check
   if (ships != NULL){
@@ -296,10 +299,16 @@ bool is_valid_move(player_t player, bomb_t bomb, ship_t ships[]) {
         int y = ships[k].y;
         if (ships[k].is_vertical) { // place ships vertically
           for (int i = 0; i < ships[k].size; i++)
-            temp_sea[x][y++]++;
+            if (y >= BOARD_SIZE)
+              return false;
+            else
+              temp_sea[x][y++]++;
         } else
           for (int i = 0; i < ships[k].size; i++)
-            temp_sea[x++][y]++;
+            if (x >= BOARD_SIZE)
+              return false;
+            else
+              temp_sea[x++][y]++;
       }
 
       // if any spot has 2 pieces, return false
@@ -327,8 +336,8 @@ void put_ships(player_t player, ship_t* ships) {
   }
 }
 
-void put_bomb(player_t player, bomb_t bomb) {
-  player.board[bomb.x][bomb.y] = BOMB_PRESENT;
+void put_bomb(player_t player, bomb_t* bomb) {
+  player.board[bomb->x][bomb->y] = BOMB_PRESENT;
 }
 
 
@@ -337,7 +346,7 @@ void put_bomb(player_t player, bomb_t bomb) {
 */
 
 int extract_int(char* message, int index, int length) {
-  return atoi(strndup(message[index], length));
+  return atoi(strndup(&message[index], length));
 }
 
 double get_current_time_ms() {
@@ -357,17 +366,17 @@ void set_expire_time(int seconds){
 int game_not_over(bool check_player_1) {
   bool player_has_ships = false;
 
-  if (check_player_1)
+  if (check_player_1) {
     for (int i = 0; i < BOARD_SIZE && !player_has_ships; i++)
       for (int j = 0; j < BOARD_SIZE && !player_has_ships; j++)
         if(player1.board[i][j]) // true if there is a ship at i, j
           player_has_ships = true;
-  else
+  } else {
     for (int i = 0; i < BOARD_SIZE && !player_has_ships; i++)
       for (int j = 0; j < BOARD_SIZE && !player_has_ships; j++)
         if(player2.board[i][j]) // true if there is a ship at i, j
           player_has_ships = true;
-
+  }
   if (player_has_ships)
     return 1;
   return 0;
@@ -375,7 +384,7 @@ int game_not_over(bool check_player_1) {
 
 bomb_t* generate_random_bomb() {
   bomb_t* bomb = (bomb_t*) malloc (sizeof(bomb_t));
-  srand(time());
+  srand(time(0));
   bomb->x = rand() % BOARD_SIZE;
   bomb->y = rand() % BOARD_SIZE;
   return bomb;
