@@ -4,10 +4,11 @@
 #include <string.h>
 #include <curses.h>
 
+#include "captain.h"
+
 #define BOARD_LENGTH 10
 #define BOARD_HEIGHT 10
 #define NUM_SHIPS 5
-//#define SHIP_LENGTHS[NUM_SHIPS] {2,3,3,4,5}
 
 void init_board(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
     for (int y = 0; y < BOARD_HEIGHT; y++) {
@@ -37,7 +38,7 @@ void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]) {
 
 }
 
-void set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
+int** set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
 
     printf("Set up your ships!\n");
     //Display how to set up ships
@@ -45,6 +46,7 @@ void set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
     printf("<y-start>: starting y position (0 - 9)\n");
     printf("<orientation>: orientation of ship (horizontal -> 'h' or vertical -> 'v')\n\n");
 
+    int all_ships[NUM_SHIPS][4];
     display_ships(board);
     int ship_lengths[NUM_SHIPS] = {2 , 3, 3, 4, 5}; // int array of lengths of ships
     bool valid; // ship placement is at a valid location
@@ -59,53 +61,78 @@ void set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
             printf("Ship of length %d: <x-start> <y-start> <orientation>\n", ship_lengths[s]);
             getline(&ship, &linecap, stdin);
 
-            // check if input is valid
+
             int length = ship_lengths[s];
             int x = (int)ship[0] - 65; // at least 0
-            int y = ship[2] - 48; // at least 0
-            char orientation = ship[4]; // h or v
+            int y = atoi(&ship[2]);  // at least 0
+            char char_orient = ship[4]; // h or v
 
-            printf("Ship: xpos = %d, ypos = %d, orientation = %c\n\n", x, y, orientation);
-
-            if (orientation == 'h' && ((x + length) < 11)) { // horizontal and within bounds
-                for(int i = x; i < x + length; i++){
-                    // if ship already exists here
-                    if(board[i][y] == '#'){
-                        // reset back to water
-                        for(int undo = i - 1; undo >= x; undo--){
-                            board[undo][y] = '~';
-                        }
-                        printf("Ship overlaps with another, try again\n");
-                        break;
-                    } else {
-                        board[i][y] = '#';
-                        // if entire ship fits, then ship is valid
-                        if (i == (x + length -1))
-                            valid = true;
-                    }
-                }
-            } else if (orientation == 'v' && ((y + length) < 11)) { // vertical and within bounds
-                for(int i = y; i < y + length; i++){
-                    // ship already exists here
-                    if(board[x][i] == '#'){
-                        // reset back to water
-                        for (int undo = i -1; undo >= y; undo--){
-                            board[x][undo] = '~';
-                        }
-                        printf("Ship overlaps with another, try again\n");
-                        break;
-                    } else {
-                        board[x][i] = '#';
-                        if (i == (y + length - 1))
-                            valid = true;
-                    }
-                }
+            int orientation;
+            if(char_orient == 'h' || char_orient == 'H'){
+                orientation = 0; // horizontal
+            } else if (char_orient == 'v' || char_orient == 'V'){
+                orientation = 1; // vertical
             } else {
-                printf("Ship does not fit here, try again\n");
+                orientation = -1; // invalid
             }
-            display_ships(board);
+
+            // check if input is valid
+            if(!((x > -1) && (y > -1) && (orientation != -1))) {
+                printf("Invalid input, try again\n");
+            } else {
+                printf("Ship: xpos = %d, ypos = %d, orientation = %c\n\n", x, y, char_orient);
+                printf("furthest x: %d\n", x + length);
+                if (orientation == 0 && ((x + length -1) < BOARD_LENGTH)) { // horizontal and within bounds
+                    for(int i = x; i < x + length; i++){
+                        // if ship already exists here
+                        if(board[i][y] == '#'){
+                            // reset back to water
+                            for(int undo = i - 1; undo >= x; undo--){
+                                board[undo][y] = '~';
+                            }
+                            printf("Ship overlaps with another, try again\n");
+                            break;
+                        } else {
+                            board[i][y] = '#';
+                            // if entire ship fits, then ship is valid
+                            if (i == (x + length -1)){
+                                all_ships[s][0] = x;
+                                all_ships[s][1] = y;
+                                all_ships[s][2] = length;
+                                all_ships[s][3] = orientation;
+                                valid = true;
+                            }
+                        }
+                    }
+                } else if (orientation == 1 && ((y + length-1) < BOARD_HEIGHT)) { // vertical and within bounds
+                    for(int i = y; i < y + length; i++){
+                        // ship already exists here
+                        if(board[x][i] == '#'){
+                            // reset back to water
+                            for (int undo = i -1; undo >= y; undo--){
+                                board[x][undo] = '~';
+                            }
+                            printf("Ship overlaps with another, try again\n");
+                            break;
+                        } else {
+                            board[x][i] = '#';
+                            if (i == (y + length - 1)){
+                                all_ships[s][0] = x;
+                                all_ships[s][1] = y;
+                                all_ships[s][2] = length;
+                                all_ships[s][3] = orientation;
+                                valid = true;
+                            }
+                        }
+                    }
+                } else {
+                    printf("Ship is out of bounds, try again\n");
+                }
+                display_ships(board);
+            }
         }
     }
+    return all_ships;
 }
 
 void update_ships (char xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]){
@@ -129,11 +156,20 @@ int main(int argc, char const *argv[]) {
     getline(&player1_name, &linecap, stdin);
     printf("Hello, %s\n", player1_name);
 
+
     char player1_ships[BOARD_LENGTH][BOARD_HEIGHT];
     init_board(player1_ships);
 
-    set_ships(player1_ships);
+    // init ui
+    int send_ships[NUM_SHIPS][4];
+    send_ships = set_ships(player1_ships);
 
+    for(int s = 0; s < NUM_SHIPS; s++){
+        for(int i = 0; i < 4; i++){
+            printf("%d ", send_ships[s][i]);
+        }
+        printf("\n");
+    }
     update_ships ('D' ,5, player1_ships);
     display_ships(player1_ships);
 
