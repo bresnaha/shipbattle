@@ -38,7 +38,7 @@ void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]) {
 
 }
 
-int** set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
+void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
 
     printf("Set up your ships!\n");
     //Display how to set up ships
@@ -46,7 +46,6 @@ int** set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
     printf("<y-start>: starting y position (0 - 9)\n");
     printf("<orientation>: orientation of ship (horizontal -> 'h' or vertical -> 'v')\n\n");
 
-    int all_ships[NUM_SHIPS][4];
     display_ships(board);
     int ship_lengths[NUM_SHIPS] = {2 , 3, 3, 4, 5}; // int array of lengths of ships
     bool valid; // ship placement is at a valid location
@@ -81,7 +80,6 @@ int** set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                 printf("Invalid input, try again\n");
             } else {
                 printf("Ship: xpos = %d, ypos = %d, orientation = %c\n\n", x, y, char_orient);
-                printf("furthest x: %d\n", x + length);
                 if (orientation == 0 && ((x + length -1) < BOARD_LENGTH)) { // horizontal and within bounds
                     for(int i = x; i < x + length; i++){
                         // if ship already exists here
@@ -96,10 +94,10 @@ int** set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                             board[i][y] = '#';
                             // if entire ship fits, then ship is valid
                             if (i == (x + length -1)){
-                                all_ships[s][0] = x;
-                                all_ships[s][1] = y;
-                                all_ships[s][2] = length;
-                                all_ships[s][3] = orientation;
+                                captain->send_ships[s][0] = x;
+                                captain->send_ships[s][1] = y;
+                                captain->send_ships[s][2] = length;
+                                captain->send_ships[s][3] = orientation;
                                 valid = true;
                             }
                         }
@@ -117,10 +115,10 @@ int** set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                         } else {
                             board[x][i] = '#';
                             if (i == (y + length - 1)){
-                                all_ships[s][0] = x;
-                                all_ships[s][1] = y;
-                                all_ships[s][2] = length;
-                                all_ships[s][3] = orientation;
+                                captain->send_ships[s][0] = x;
+                                captain->send_ships[s][1] = y;
+                                captain->send_ships[s][2] = length;
+                                captain->send_ships[s][3] = orientation;
                                 valid = true;
                             }
                         }
@@ -132,7 +130,6 @@ int** set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
             }
         }
     }
-    return all_ships;
 }
 
 void update_ships (char xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]){
@@ -150,28 +147,38 @@ void update_ships (char xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]){
 }
 
 int main(int argc, char const *argv[]) {
-    char* player1_name = NULL;
+
+    // get player's name
+    char* player1_full = NULL;
     size_t linecap = 0;
     printf("Greetings Captain! What is your name?\n");
-    getline(&player1_name, &linecap, stdin);
-    printf("Hello, %s\n", player1_name);
+    getline(&player1_full, &linecap, stdin);
+
+    // only 8 characters for username
+    char p1_name[9];
+    strncpy(p1_name, player1_full, 8);
+    p1_name[8] = 0;
 
 
-    char player1_ships[BOARD_LENGTH][BOARD_HEIGHT];
-    init_board(player1_ships);
+    // make captain
+    captain_t captain1;
+    captain1.username = p1_name; // cap length 8
+    printf("Hello, Captain %s!\n", captain1.username);
+
+    char player1_board[BOARD_LENGTH][BOARD_HEIGHT];
+    init_board(player1_board);
 
     // init ui
-    int send_ships[NUM_SHIPS][4];
-    send_ships = set_ships(player1_ships);
+    set_ships(&captain1, player1_board);
 
     for(int s = 0; s < NUM_SHIPS; s++){
         for(int i = 0; i < 4; i++){
-            printf("%d ", send_ships[s][i]);
+            printf("%d ", captain1.send_ships[s][i]);
         }
         printf("\n");
     }
-    update_ships ('D' ,5, player1_ships);
-    display_ships(player1_ships);
+    update_ships ('D' ,5, player1_board);
+    display_ships(player1_board);
 
     return 0;
 }

@@ -30,7 +30,7 @@ void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]);
   * set_ships: initialize a captain's ships to a game board
   * parameters: board - 2D char array
   */
-int** set_ships(char board[BOARD_LENGTH][BOARD_HEIGHT]);
+void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
   * update_ships: updates a captain's guesses to a game board
