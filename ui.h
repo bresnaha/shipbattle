@@ -29,52 +29,52 @@ char* ui_read_input();
  * Adds a ship to the player's display.
  *
  * \param length  	The length if the ship being added.
+ * \param col		The com where the miss is occuring.
  * \param row		The row where the top left of the ship is.
- * \param col		The com where the top left of the ship is.
  * \param vert		If the ship is vertical or horizontal.
  *                
  */
-void ui_init_ship(int length, int row, int col, bool vert);
+void ui_init_ship(int length, int col, int row, bool vert);
 
 /**
  * Marks one of your ships as being hit.
  *
+ * \param col		The com where the miss is occuring.
  * \param row		The row where the hit is occuring.
- * \param col		The com where the hit is occuring.
  *                
  */
 
-void ui_hit(int row, int col);
+void ui_hit(int col, int row);
 
 /**
  * Displays a missed attack animation.
  *
- * \param row		The row where the miss is occuring.
  * \param col		The com where the miss is occuring.
+ * \param row		The row where the miss is occuring.
  *                
  */
 
-void ui_miss(int row, int col);
+void ui_miss(int col, int row);
 
 /**
  * Marks one of your opponent's ships as being hit.
  *
+ * \param col		The com where the miss is occuring.
  * \param row		The row where the hit is occuring.
- * \param col		The com where the hit is occuring.
  *                
  */
  
-void ui_hit_opp(int row, int col);
+void ui_hit_opp(int col, int row);
 
 /**
  * Marks one of your opponent's squares as being a miss.
  *
- * \param row		The row where the miss is occuring.
  * \param col		The com where the miss is occuring.
+ * \param row		The row where the miss is occuring.
  *                
  */
 
-void ui_miss_opp(int row, int col);
+void ui_miss_opp(int col, int row);
 
 
 
