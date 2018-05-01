@@ -5,5 +5,5 @@ all: server
 clean:
 	rm -f server
 
-client: client.c ui.c ui.h
+server: server.c server.h
 	$(CC) $(CFLAGS) -pthread -o server server.c
