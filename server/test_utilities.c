@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include "server.h"
 
 void print_board(int board[][], int board_size) {
