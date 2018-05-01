@@ -15,25 +15,31 @@ typedef struct captain {
 } captain_t;
 
 /**
-  * init_board: initialize a game board to all water
-  * parameters: board - 2D char array
+  * Initialize a game board to all water
+  *
+  * \param board  The 2D char array board.
   */
 void init_board(char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
   * display_ships: display a game board
-  * parameters: board - 2D char array
+  *
+  * \param board - 2D char array
   */
 void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
   * set_ships: initialize a captain's ships to a game board
-  * parameters: board - 2D char array
+  *
+  * \param captain  The captain string. Truncated to 8 characters by default
+  *                 The captain of the fleet!
+  * \param board    The 2D char array board.
   */
 void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
   * update_ships: updates a captain's guesses to a game board
-  * parameters:
+  *
+  * \param board  The 2D char array board.
   */
 void update_ships (char xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]);

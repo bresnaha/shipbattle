@@ -5,6 +5,7 @@
 #include <curses.h>
 
 #include "captain.h"
+#include "ui.h"
 
 #define BOARD_LENGTH 10
 #define BOARD_HEIGHT 10
@@ -46,7 +47,7 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
     printf("<y-start>: starting y position (0 - 9)\n");
     printf("<orientation>: orientation of ship (horizontal -> 'h' or vertical -> 'v')\n\n");
 
-    display_ships(board);
+    //display_ships(board);
     int ship_lengths[NUM_SHIPS] = {2 , 3, 3, 4, 5}; // int array of lengths of ships
     bool valid; // ship placement is at a valid location
 
@@ -98,6 +99,7 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                                 captain->send_ships[s][1] = y;
                                 captain->send_ships[s][2] = length;
                                 captain->send_ships[s][3] = orientation;
+                                ui_init_ship(length, x, y, orientation);
                                 valid = true;
                             }
                         }
@@ -119,6 +121,7 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                                 captain->send_ships[s][1] = y;
                                 captain->send_ships[s][2] = length;
                                 captain->send_ships[s][3] = orientation;
+                                ui_init_ship(length, x, y, orientation);
                                 valid = true;
                             }
                         }
@@ -126,7 +129,7 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                 } else {
                     printf("Ship is out of bounds, try again\n");
                 }
-                display_ships(board);
+                //display_ships(board);
             }
         }
     }
@@ -167,18 +170,20 @@ int main(int argc, char const *argv[]) {
 
     char player1_board[BOARD_LENGTH][BOARD_HEIGHT];
     init_board(player1_board);
-
+    ui_init();
     // init ui
     set_ships(&captain1, player1_board);
 
-    for(int s = 0; s < NUM_SHIPS; s++){
-        for(int i = 0; i < 4; i++){
-            printf("%d ", captain1.send_ships[s][i]);
-        }
-        printf("\n");
-    }
     update_ships ('D' ,5, player1_board);
     display_ships(player1_board);
 
     return 0;
 }
+
+/*
+    for(int s = 0; s < NUM_SHIPS; s++){
+        for(int i = 0; i < 4; i++){
+            printf("%d ", captain1.send_ships[s][i]);
+        }
+        printf("\n");
+    }*/
