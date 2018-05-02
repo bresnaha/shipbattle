@@ -1,0 +1,10 @@
+CC = clang
+CFLAGS = -g
+
+all: client
+
+clean:
+	rm -f client
+
+captain: captain.c ui.c ui.h
+	$(CC) $(CFLAGS) -pthread -o captain captain.c ui.c -lncurses
