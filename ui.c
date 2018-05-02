@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <bool.h>
+#include <stdbool.h>
 
 #define WIDTH 78
 #define SHIP_HEIGHT 24 // pad of 6 on top and bot
@@ -41,7 +41,7 @@ void ui_init() {
   noecho();
   
     // Create the ship window
-  chatwin = shipwin(mainwin, SHIP_HEIGHT + 2, WIDTH + 2, 0, 0);
+  shipwin = subwin(mainwin, SHIP_HEIGHT + 2, WIDTH + 2, 0, 0);
   box(chatwin, 0, 0);
   // Create the chat window
   chatwin = subwin(mainwin, CHAT_HEIGHT + 2, WIDTH + 2, SHIP_HEIGHT + 2, 0);

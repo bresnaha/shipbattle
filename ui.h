@@ -1,6 +1,6 @@
 #ifndef UI_H
 #define UI_H
-
+#include <stdbool.h>
 /**
  * Initialize the chat user interface. Call this once at startup.
  */
