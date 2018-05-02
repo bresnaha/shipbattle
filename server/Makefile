@@ -1,9 +1,15 @@
 CC = clang
 CFLAGS = -g
-all: server
+all: lobby
 
 clean:
-	rm -f server
-
+	rm -f lobby server
+	
 server: server.c server.h
-	$(CC) $(CFLAGS) -pthread -o server server.c
+	$(CC) $(CFLAGS) -o server server.c -pthread
+
+lobby: lobby.c server.c server.h
+	$(CC) $(CFLAGS) -o lobby lobby.c server.c -pthread
+
+test: 
+	$(CC) $(CFLAGS) -o test test.c test_utilities.c server.c -pthread

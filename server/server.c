@@ -16,11 +16,6 @@
 #include <sys/types.h>
 
 
-/*
-  main listens for incoming connections, initializes a lobby when
-   two users are waiting simultaneously
- */
-
 player_t player1;
 player_t player2;
 double turn_expire_time;
@@ -29,8 +24,13 @@ pthread_t match_lobby;
 pthread_t player_1_listener;
 pthread_t player_2_listener;
 
-int main(int args, char** argv){
+/*
+  main listens for incoming connections, initializes a lobby when
+   two users are waiting simultaneously
+ */
 
+void make_lobby() {
+  
   // gather two incoming connections
   open_connection_listener();
   connection_listener(&player1);
@@ -39,7 +39,70 @@ int main(int args, char** argv){
   // create thread for lobby
   pthread_create(&match_lobby, NULL, thread_moderate_match, NULL);
   pthread_join(match_lobby, NULL);
+  
+}
 
+/*
+ *    Tests
+ */
+
+double test_getCurrentTimeMs() {
+  return get_current_time_ms();
+}
+
+void test_setExpireTime(int seconds) {
+  set_expire_time(seconds);
+}
+
+bool test_setAndTimeOut(int seconds, int wait_sec) {
+  set_expire_time(seconds);
+  sleep(wait_sec);
+  return time_out();
+  
+}
+
+void test(){
+  
+  printf("\n\nTEST: generate_random_bomb()\n");
+  bomb_t bomb;
+  generate_random_bomb(&bomb);  
+  printf("%d, %d",bomb.x, bomb.y);
+  
+  printf("\n\nTEST: get_current_time()\n");
+  printf("%f",test_getCurrentTimeMs());
+  
+  printf("\n\nTEST: set_expire_time(WAIT_INIT)\n");
+  test_setExpireTime(WAIT_INIT);
+  printf("%f",turn_expire_time);
+  
+  printf("\n\nTEST: set_expire_time(WAIT_TURN)\n");
+  test_setExpireTime(WAIT_TURN);
+  printf("%f",turn_expire_time);
+  
+  printf("\n\nTEST: generate_random_bomb()\n");
+  generate_random_bomb(&bomb);  
+  printf("%d, %d",bomb.x, bomb.y);
+  
+  printf("\n\nTEST: time_out() == true\n");
+  printf("%d",test_setAndTimeOut(1, 2));
+  
+  printf("\n\nTEST: time_out() == false\n");
+  printf("%d",test_setAndTimeOut(2, 1));
+  
+}
+
+/*
+ *     Main
+ */ 
+ 
+int main(int args, char** argv){
+  
+  // run tests  
+  test();  
+
+  // make lobby for game
+  //make_lobby();
+  
   return 0;
 }
 
@@ -263,12 +326,13 @@ char* take_turn(player_t player) {
     }
   }
   // timed_out: take turn for player
-  bomb_t *bomb = generate_random_bomb();
-  put_bomb(player, bomb);
+  bomb_t bomb;
+  generate_random_bomb(&bomb);
+  put_bomb(player, &bomb);
   // send other player about random bomb
   strncpy(message, player.username, USERNAME_LENGTH);
-  message[USERNAME_LENGTH+PADDING_LENGTH] = bomb->x;
-  message[USERNAME_LENGTH+PADDING_LENGTH+SHIP_X_SIZE] = bomb->x;
+  message[USERNAME_LENGTH+PADDING_LENGTH] = bomb.x;
+  message[USERNAME_LENGTH+PADDING_LENGTH+SHIP_X_SIZE] = bomb.x;
   return message;
 }
 
@@ -356,7 +420,7 @@ double get_current_time_ms() {
 }
 
 bool time_out() {
-  return turn_expire_time > get_current_time_ms();
+  return turn_expire_time < get_current_time_ms();
 }
 
 void set_expire_time(int seconds){
@@ -382,10 +446,8 @@ int game_not_over(bool check_player_1) {
   return 0;
 }
 
-bomb_t* generate_random_bomb() {
-  bomb_t* bomb = (bomb_t*) malloc (sizeof(bomb_t));
-  srand(time(0));
+void generate_random_bomb(bomb_t* bomb) {
+  srand(time(NULL));
   bomb->x = rand() % BOARD_SIZE;
   bomb->y = rand() % BOARD_SIZE;
-  return bomb;
 }
