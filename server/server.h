@@ -152,18 +152,23 @@ bool write_to_socket(player_t player, char* message, int length);
 //    SERVER-SIDE MISCELLANIES
 
 /*
-   checks timestamp and determines if current user has timed-out
-    return: boolean, whether user has timed-out
+   get_current_time_ms() and determines if current user has timed-out
+    return: true if user has timed-out
 */
 bool time_out();
 
-void set_expire_time();
+/*
+   stores /seconds/ + get_current_time_ms() to turn_expire_time
+    returns: nothing
+    (checked)
+ */
+void set_expire_time(int seconds);
 
 /*
    picks a random move on the board
     return: a bomb_t, indicates a bomb
 */
-bomb_t* generate_random_bomb();
+void generate_random_bomb(bomb_t* bomb);
 
 /*
    checks whether a goal state has been reached
@@ -171,4 +176,12 @@ bomb_t* generate_random_bomb();
  */
 int game_not_over(bool check_player_1);
 
+/*
+   gets current time in milliseconds
+    returns: a double, the current time
+    (checked)
+ */
 double get_current_time_ms();
+
+
+// TODO: generate_random_bomb() might not be random

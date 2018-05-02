@@ -1,5 +1,6 @@
 #include "server.h"
 #include "test_utilities.c"
+#include <stdbool.h>
 
 void initialize_player_test (char* username, int socket, char* ip_address) {
 	player_t player;
