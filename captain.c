@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <curses.h>
+#include <pthread.h>
 
 #include "captain.h"
 #include "ui.h"
@@ -10,6 +11,8 @@
 #define BOARD_LENGTH 10
 #define BOARD_HEIGHT 10
 #define NUM_SHIPS 5
+
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 void init_board(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
     for (int y = 0; y < BOARD_HEIGHT; y++) {
@@ -41,14 +44,14 @@ void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]) {
 
 void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
 
-    printf("Set up your ships!\n");
-    //Display how to set up ships
-    printf("<x-start>: starting x position ('A' - 'J')\n");
-    printf("<y-start>: starting y position (0 - 9)\n");
-    printf("<orientation>: orientation of ship (horizontal -> 'h' or vertical -> 'v')\n\n");
-
+  ui_add_message("System", "Set up your ships!");
+  //Display how to set up ships
+  ui_add_message("System", "<x-start>: starting x position ('A' - 'J')");
+  ui_add_message("System", "<y-start>: starting y position (0 - 9)");
+  ui_add_message("System", "<orientation>: orientation of ship (horiz -> 'h' or vert -> 'v')");
+  ui_add_message("System", "<x-start> <y-start> <orientation>");
     //display_ships(board);
-    int ship_lengths[NUM_SHIPS] = {2 , 3, 3, 4, 5}; // int array of lengths of ships
+    int ship_lengths[NUM_SHIPS] = {2, 3, 3, 4, 5}; // int array of lengths of ships
     bool valid; // ship placement is at a valid location
 
     for(int s = 0; s < NUM_SHIPS; s++){ // for all ships to be set
@@ -56,12 +59,15 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
         while (!valid) { // while ship has not been place in a valid location
 
             // Request location and orientation of a ship
-            char* ship = NULL;
+
+          /*char* ship = NULL;
             size_t linecap = 0;
             printf("Ship of length %d: <x-start> <y-start> <orientation>\n", ship_lengths[s]);
             getline(&ship, &linecap, stdin);
-
-
+            */
+            char* ship = ui_read_input();
+            pthread_mutex_lock(&lock);
+            
             int length = ship_lengths[s];
             int x = (int)ship[0] - 65; // at least 0
             int y = atoi(&ship[2]);  // at least 0
@@ -76,11 +82,12 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                 orientation = -1; // invalid
             }
 
+            ui_add_message(captain->username, ship);
+
             // check if input is valid
             if(!((x > -1) && (y > -1) && (orientation != -1))) {
-                printf("Invalid input, try again\n");
+                 ui_add_message("System", "Invalid input, try again");
             } else {
-                printf("Ship: xpos = %d, ypos = %d, orientation = %c\n\n", x, y, char_orient);
                 if (orientation == 0 && ((x + length -1) < BOARD_LENGTH)) { // horizontal and within bounds
                     for(int i = x; i < x + length; i++){
                         // if ship already exists here
@@ -89,7 +96,7 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                             for(int undo = i - 1; undo >= x; undo--){
                                 board[undo][y] = '~';
                             }
-                            printf("Ship overlaps with another, try again\n");
+                             ui_add_message("System","Ship overlaps with another, try again");
                             break;
                         } else {
                             board[i][y] = '#';
@@ -112,7 +119,7 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                             for (int undo = i -1; undo >= y; undo--){
                                 board[x][undo] = '~';
                             }
-                            printf("Ship overlaps with another, try again\n");
+                            ui_add_message("System", "Ship overlaps with another, try again");
                             break;
                         } else {
                             board[x][i] = '#';
@@ -127,8 +134,10 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                         }
                     }
                 } else {
-                    printf("Ship is out of bounds, try again\n");
+                    ui_add_message("System", "Ship is out of bounds, try again");
                 }
+                pthread_mutex_unlock(&lock);
+                free(ship);
                 //display_ships(board);
             }
         }
@@ -162,11 +171,17 @@ int main(int argc, char const *argv[]) {
     strncpy(p1_name, player1_full, 8);
     p1_name[8] = 0;
 
+    for(int i = 0; i < 9; i++){
+      if(p1_name[i] == '\n')
+        p1_name[i] = ' ';
+      else if (p1_name[i] == '\0') // TODO: fix padding for username
+        p1_name[i] = ' ';
+    }
 
     // make captain
     captain_t captain1;
     captain1.username = p1_name; // cap length 8
-    printf("Hello, Captain %s!\n", captain1.username);
+    printf("Hello, Captain %s\n", captain1.username);
 
     char player1_board[BOARD_LENGTH][BOARD_HEIGHT];
     init_board(player1_board);

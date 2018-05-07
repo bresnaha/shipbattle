@@ -55,10 +55,10 @@ void ui_init() {
   int rowcount = 0;
   int colcount = 0;
   for (int row = 2+ BOARD_1_Y; row < 12 + BOARD_1_Y; ++row) {
-  	for (int col = BOARD_1_X; col < 21 + BOARD_1_X; ++col) {
+  	for (int col = BOARD_1_X; col < 1+21 + BOARD_1_X; ++col) {
   		if(col == BOARD_1_X) { 
-  			mvaddch(row,col, (char) rowcount+65);
-  			colcount = 1;
+                  mvaddch(row,col,(char) rowcount+48/*65*/);
+  			colcount = 0;
   		} else if (colcount == 1){
   			mvaddch(row,col, '~');
   			colcount = 0;
@@ -74,10 +74,10 @@ void ui_init() {
   rowcount = 0;
   colcount = 0;
   for (int row = 2+ BOARD_2_Y; row < 12 + BOARD_2_Y; ++row) {
-  	for (int col = BOARD_2_X; col < 21 + BOARD_2_X; ++col) {
+  	for (int col = BOARD_2_X; col < 1 + 21 + BOARD_2_X; ++col) {
   		if(col == BOARD_2_X) { 
-  			mvaddch(row,col, (char) rowcount+65);
-  			colcount = 1;
+                  mvaddch(row,col, (char) rowcount+48/*65*/);
+  			colcount = 0;
   		} else if (colcount == 1){
   			mvaddch(row,col, '~');
   			colcount = 0;
