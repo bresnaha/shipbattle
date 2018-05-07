@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <curses.h>
 #include <pthread.h>
 
@@ -42,6 +43,7 @@ void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]) {
 
 }
 
+
 void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
 
   ui_add_message("System", "Set up your ships!");
@@ -49,99 +51,101 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
   ui_add_message("System", "<x-start>: starting x position ('A' - 'J')");
   ui_add_message("System", "<y-start>: starting y position (0 - 9)");
   ui_add_message("System", "<orientation>: orientation of ship (horiz -> 'h' or vert -> 'v')");
-  ui_add_message("System", "<x-start> <y-start> <orientation>");
-    //display_ships(board);
-    int ship_lengths[NUM_SHIPS] = {2, 3, 3, 4, 5}; // int array of lengths of ships
-    bool valid; // ship placement is at a valid location
 
-    for(int s = 0; s < NUM_SHIPS; s++){ // for all ships to be set
-        valid = false; // initially ship placement is not valid
-        while (!valid) { // while ship has not been place in a valid location
+  //display_ships(board);
+  int ship_lengths[NUM_SHIPS] = {2, 3, 3, 4, 5}; // int array of lengths of ships
+  bool valid; // ship placement is at a valid location
 
-            // Request location and orientation of a ship
+  for(int s = 0; s < NUM_SHIPS; s++){ // for all ships to be set
+    valid = false; // initially ship placement is not valid
+    while (!valid) { // while ship has not been place in a valid location
+      int length = ship_lengths[s];
+      // Request location and orientation of a ship
+      char* add_ship = "Ship of length  : <x-start> <y-start> <orientation>";
+      //add_ship[15] = length;
+      ui_add_message("System", add_ship);
 
-          /*char* ship = NULL;
-            size_t linecap = 0;
-            printf("Ship of length %d: <x-start> <y-start> <orientation>\n", ship_lengths[s]);
-            getline(&ship, &linecap, stdin);
-            */
-            char* ship = ui_read_input();
-            pthread_mutex_lock(&lock);
+      char* ship_input = ui_read_input();
+      pthread_mutex_lock(&lock);
             
-            int length = ship_lengths[s];
-            int x = (int)ship[0] - 65; // at least 0
-            int y = atoi(&ship[2]);  // at least 0
-            char char_orient = ship[4]; // h or v
+      // TODO: upper and lower case inputs
+      int x = (int)toupper(ship_input[0]) - 65; // at least 0
+      int y = atoi(&ship_input[2]);  // at least 0
+      char char_orient = toupper(ship_input[4]); // H or V
 
-            int orientation;
-            if(char_orient == 'h' || char_orient == 'H'){
-                orientation = 0; // horizontal
-            } else if (char_orient == 'v' || char_orient == 'V'){
-                orientation = 1; // vertical
+      int orientation;
+      if(char_orient == 'H'){
+        orientation = 0; // horizontal
+      } else if (char_orient == 'V'){
+        orientation = 1; // vertical
+      } else {
+        orientation = -1; // invalid
+      }
+
+      /* add_ship = "Ship: x-start = " + ship_input[0] +
+        ", y-start = " + ship_input[2] +
+        ", orientation = " + ship_input[4];
+      */
+      ui_add_message(captain->username, ship_input);
+      
+      // check if input is valid
+      if(!((x > -1) && (y > -1) && (orientation != -1))) {
+        ui_add_message("System", "Invalid input, try again");
+      } else {
+        if (orientation == 0 && ((x + length -1) < BOARD_LENGTH)) { // horizontal and within bounds
+          for(int i = x; i < x + length; i++){
+            // if ship already exists here
+            if(board[i][y] == '#'){
+              // reset back to water
+              for(int undo = i - 1; undo >= x; undo--){
+                board[undo][y] = '~';
+              }
+              ui_add_message("System","Ship overlaps with another, try again");
+              break;
             } else {
-                orientation = -1; // invalid
+              board[i][y] = '#';
+              // if entire ship fits, then ship is valid
+              if (i == (x + length -1)){
+                captain->send_ships[s][0] = x;
+                captain->send_ships[s][1] = y;
+                captain->send_ships[s][2] = length;
+                captain->send_ships[s][3] = orientation;
+                ui_init_ship(length, x, y, orientation);
+                valid = true;
+              }
             }
-
-            ui_add_message(captain->username, ship);
-
-            // check if input is valid
-            if(!((x > -1) && (y > -1) && (orientation != -1))) {
-                 ui_add_message("System", "Invalid input, try again");
+          }
+        } else if (orientation == 1 && ((y + length-1) < BOARD_HEIGHT)) { // vertical and within bounds
+          for(int i = y; i < y + length; i++){
+            // ship already exists here
+            if(board[x][i] == '#'){
+              // reset back to water
+              for (int undo = i -1; undo >= y; undo--){
+                board[x][undo] = '~';
+              }
+              ui_add_message("System", "Ship overlaps with another, try again");
+              break;
             } else {
-                if (orientation == 0 && ((x + length -1) < BOARD_LENGTH)) { // horizontal and within bounds
-                    for(int i = x; i < x + length; i++){
-                        // if ship already exists here
-                        if(board[i][y] == '#'){
-                            // reset back to water
-                            for(int undo = i - 1; undo >= x; undo--){
-                                board[undo][y] = '~';
-                            }
-                             ui_add_message("System","Ship overlaps with another, try again");
-                            break;
-                        } else {
-                            board[i][y] = '#';
-                            // if entire ship fits, then ship is valid
-                            if (i == (x + length -1)){
-                                captain->send_ships[s][0] = x;
-                                captain->send_ships[s][1] = y;
-                                captain->send_ships[s][2] = length;
-                                captain->send_ships[s][3] = orientation;
-                                ui_init_ship(length, x, y, orientation);
-                                valid = true;
-                            }
-                        }
-                    }
-                } else if (orientation == 1 && ((y + length-1) < BOARD_HEIGHT)) { // vertical and within bounds
-                    for(int i = y; i < y + length; i++){
-                        // ship already exists here
-                        if(board[x][i] == '#'){
-                            // reset back to water
-                            for (int undo = i -1; undo >= y; undo--){
-                                board[x][undo] = '~';
-                            }
-                            ui_add_message("System", "Ship overlaps with another, try again");
-                            break;
-                        } else {
-                            board[x][i] = '#';
-                            if (i == (y + length - 1)){
-                                captain->send_ships[s][0] = x;
-                                captain->send_ships[s][1] = y;
-                                captain->send_ships[s][2] = length;
-                                captain->send_ships[s][3] = orientation;
-                                ui_init_ship(length, x, y, orientation);
-                                valid = true;
-                            }
-                        }
-                    }
-                } else {
-                    ui_add_message("System", "Ship is out of bounds, try again");
-                }
-                pthread_mutex_unlock(&lock);
-                free(ship);
-                //display_ships(board);
+              board[x][i] = '#';
+              if (i == (y + length - 1)){
+                captain->send_ships[s][0] = x;
+                captain->send_ships[s][1] = y;
+                captain->send_ships[s][2] = length;
+                captain->send_ships[s][3] = orientation;
+                ui_init_ship(length, x, y, orientation);
+                valid = true;
+              }
             }
+          }
+        } else {
+          ui_add_message("System", "Ship is out of bounds, try again");
         }
+        pthread_mutex_unlock(&lock);
+        free(ship_input);
+        //display_ships(board);
+      }
     }
+  }
 }
 
 void update_ships (char xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]){
@@ -189,8 +193,8 @@ int main(int argc, char const *argv[]) {
     // init ui
     set_ships(&captain1, player1_board);
 
-    update_ships ('D' ,5, player1_board);
-    display_ships(player1_board);
+    //update_ships ('D' ,5, player1_board);
+    //display_ships(player1_board);
 
     return 0;
 }
