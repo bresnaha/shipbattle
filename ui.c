@@ -231,7 +231,7 @@ char* ui_read_input() {
  */
 
 void ui_init_ship(int length, int col, int row, bool vert){
-	int cur_col = col + BOARD_1_X + 1 + (col/2);
+	int cur_col = col + BOARD_1_X + 2 + (col+1/2);
 	int cur_row = row + BOARD_1_Y + 2;
 	for (int i = 0; i < length; ++i){
 		mvaddch(cur_row, cur_col, '#');
