@@ -26,6 +26,8 @@ WINDOW* inputwin;
 char* messages[CHAT_HEIGHT];
 size_t num_messages = 0;
 
+// TODO: Fix board letters on top, nums on left side, fix water
+
 /**
  * Initialize the chat user interface. Call this once at startup.
  */
