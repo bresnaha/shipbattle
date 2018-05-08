@@ -17,6 +17,15 @@ void ui_init(char* username);
  * \param message   The message string. This function does *not* take ownership
  *                  of this memory.
  */
+
+/**
+ * Sets opponnent's username.
+ *
+ * \param username  The username string. Truncated to 8 characters by default.
+ *                  This function does *not* take ownership of this memory.
+ */
+void ui_set_opp_name(char* username);
+
 void ui_add_message(char* username, char* message);
 
 /**
