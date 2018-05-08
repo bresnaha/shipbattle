@@ -10,12 +10,12 @@
 #define USERNAME_LENGTH 8
 
 typedef struct captain {
-    char username[USERNAME_LENGTH+1];
+    char* username;
     int send_ships[NUM_SHIPS][4];
 } captain_t;
 
 typedef struct bomb {
-    char cap_username[USERNAME_LENGTH+1];
+    char* cap_username;
     int x;
     int y;
 } bomb_t;
@@ -51,3 +51,10 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]);
   * \param board  The 2D char array board.
   */
 void update_ships (char xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]);
+
+/**
+  * prepare_bomb: prepare a captain's bomb to send to server
+  *
+  * \param captain  The captain preparing the bomb
+  */
+bomb_t prepare_bomb (captain_t* captain);
