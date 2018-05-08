@@ -60,7 +60,7 @@ void* ui_miss_bomb(void* arg);
  *                
  */
 
-void ui_hit(int col, int row);
+void ui_hit(int col, int row, char** board);
 
 /**
  * Displays a missed attack animation.
@@ -70,7 +70,7 @@ void ui_hit(int col, int row);
  *                
  */
 
-void ui_miss(int col, int row);
+void ui_miss(int col, int row, char** board);
 
 /**
  * Marks one of your opponent's ships as being hit.
