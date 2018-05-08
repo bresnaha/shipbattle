@@ -181,6 +181,7 @@ int main(int argc, char const *argv[]) {
       else if (p1_name[i] == '\0') // TODO: fix padding for username
         p1_name[i] = ' ';
     }
+    p1_name[8] = '\0';    
 
     // make captain
     captain_t captain1;
@@ -189,7 +190,7 @@ int main(int argc, char const *argv[]) {
 
     char player1_board[BOARD_LENGTH][BOARD_HEIGHT];
     init_board(player1_board);
-    ui_init();
+    ui_init(p1_name);
     // init ui
     set_ships(&captain1, player1_board);
 

@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 #define WIDTH 78
-#define SHIP_HEIGHT 24
+#define SHIP_HEIGHT 20
 #define CHAT_HEIGHT 10
 #define INPUT_HEIGHT 1
 #define USERNAME_DISPLAY_MAX 8
