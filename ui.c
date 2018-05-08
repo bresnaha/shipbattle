@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define WIDTH 78
 #define SHIP_HEIGHT 20
@@ -102,6 +103,17 @@ void ui_init(char* username) {
  mvprintw(BOARD_1_Y,BOARD_1_X,username);
  mvprintw(BOARD_2_Y,BOARD_2_X,"Opponent");
   // Refresh the display
+  refresh();
+}
+
+/**
+ * Sets opponnent's username.
+ *
+ * \param username  The username string. Truncated to 8 characters by default.
+ *                  This function does *not* take ownership of this memory.
+ */
+void ui_set_opp_name(char* username){
+  mvprintw(BOARD_2_Y,BOARD_2_X,username);
   refresh();
 }
 
@@ -263,11 +275,35 @@ void ui_init_ship(int length, int col, int row, bool vert){
  *                
  */
 
-void ui_hit(int col, int row){
-
+void ui_hit(int col, int row/*, char ** board*/){
+  /*
+    /  
+  <===≤  ~  # * # ~
+    \    ~  # • # ~
+         ~  # . # ~
+         ~  # @ # ~
+         ~  # % # ~
+         ~  # & # ~
+         ~  # X # ~
+  */
+  int plane_col;
+  int plane_row;
 	//hit animation
 	//do something pretty
-
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '*');
+  refresh();
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '•');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '.');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '@');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '%');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '&');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'X');
 	refresh();
 }
 
@@ -280,11 +316,33 @@ void ui_hit(int col, int row){
  */
 
 void ui_miss(int col, int row){
-
-	//miss animation
-	//do something pretty
-
-	refresh();
+ /*
+    /  
+  <===≤  ~  # * # ~
+    \    ~  # • # ~
+         ~  # . # ~
+         ~  # W # ~
+         ~  # w # ~
+         ~  # ~ # ~
+  */
+  int plane_col;
+  int plane_row;
+  //miss animation
+  //do something pretty
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '*');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '•');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '.');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '@');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'W');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'w');
+  refresh();
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '~');
+  refresh();
 }
 
 /**
