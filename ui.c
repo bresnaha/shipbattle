@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <time.h>
+#include <pthread.h>
 
 #define WIDTH 78
 #define SHIP_HEIGHT 20
