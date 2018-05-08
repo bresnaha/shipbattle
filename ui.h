@@ -1,6 +1,12 @@
 #ifndef UI_H
 #define UI_H
 #include <stdbool.h>
+  typedef struct pos_arg {
+  	int row;
+  	int col;
+  }pos;
+
+
 /**
  * Initialize the chat user interface. Call this once at startup.
  * \param username  The username string. Truncated to 8 characters by default.
