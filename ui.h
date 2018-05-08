@@ -1,6 +1,8 @@
 #ifndef UI_H
 #define UI_H
 #include <stdbool.h>
+#define BOARD_LENGTH 10
+#define BOARD_HEIGHT 10
   typedef struct pos_arg {
   	int row;
   	int col;
@@ -54,7 +56,7 @@ char* ui_read_input();
 void ui_init_ship(int length, int col, int row, bool vert);
 
 /*helper function for ui_hit and ui_miss*/
-void ui_plane(int col, int row, char ** board, bool hit);
+void ui_plane(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT], bool hit);
 void* ui_hit_bomb(void* arg);
 void* ui_miss_bomb(void* arg);
 
@@ -66,7 +68,7 @@ void* ui_miss_bomb(void* arg);
  *                
  */
 
-void ui_hit(int col, int row, char** board);
+void ui_hit(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
  * Displays a missed attack animation.
@@ -76,7 +78,7 @@ void ui_hit(int col, int row, char** board);
  *                
  */
 
-void ui_miss(int col, int row, char** board);
+void ui_miss(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
  * Marks one of your opponent's ships as being hit.

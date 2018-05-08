@@ -19,6 +19,9 @@
 #define BOARD_1_X 12
 #define BOARD_2_X 45
 
+#define BOARD_LENGTH 10
+#define BOARD_HEIGHT 10
+
 
 WINDOW* mainwin;
 WINDOW* shipwin;
@@ -276,7 +279,7 @@ void ui_init_ship(int length, int col, int row, bool vert){
  *                
  */
 
-void ui_hit(int col, int row, char ** board){
+void ui_hit(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]){
   /*
     /  
   <===≤  ~  # * # ~
@@ -292,7 +295,7 @@ void ui_hit(int col, int row, char ** board){
   ui_plane(col, row, board, true);
 }
 
-void ui_plane(int col, int row, char ** board, bool hit){
+void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hit){
   pthread_t bomb_thread;
   pos* arg = malloc(sizeof(int)*2);
   arg->row = row;
@@ -449,7 +452,7 @@ void* ui_miss_bomb(void* arg){
  *                
  */
 
-void ui_miss(int col, int row, char** board){
+void ui_miss(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]){
  /*
     /  
   <===≤  ~  ~ * ~ ~
