@@ -48,9 +48,11 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]);
 /**
   * update_ships: updates a captain's guesses to a game board
   *
+  * \param xpos   The int x coordinate of the bomb
+  * \param ypos   The int y coordinate of the bomb
   * \param board  The 2D char array board.
   */
-void update_ships (char xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]);
+void update_ships (int xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
   * prepare_bomb: prepare a captain's bomb to send to server
