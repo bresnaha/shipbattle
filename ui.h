@@ -1,6 +1,12 @@
 #ifndef UI_H
 #define UI_H
 #include <stdbool.h>
+  typedef struct pos_arg {
+  	int row;
+  	int col;
+  }pos;
+
+
 /**
  * Initialize the chat user interface. Call this once at startup.
  * \param username  The username string. Truncated to 8 characters by default.
@@ -47,6 +53,11 @@ char* ui_read_input();
  */
 void ui_init_ship(int length, int col, int row, bool vert);
 
+/*helper function for ui_hit and ui_miss*/
+void ui_plane(int col, int row, char ** board, bool hit);
+void* ui_hit_bomb(void* arg);
+void* ui_miss_bomb(void* arg);
+
 /**
  * Marks one of your ships as being hit.
  *
@@ -55,7 +66,7 @@ void ui_init_ship(int length, int col, int row, bool vert);
  *                
  */
 
-void ui_hit(int col, int row);
+void ui_hit(int col, int row, char** board);
 
 /**
  * Displays a missed attack animation.
@@ -65,7 +76,7 @@ void ui_hit(int col, int row);
  *                
  */
 
-void ui_miss(int col, int row);
+void ui_miss(int col, int row, char** board);
 
 /**
  * Marks one of your opponent's ships as being hit.

@@ -62,14 +62,13 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
     while (!valid) { // while ship has not been place in a valid location
       int length = ship_lengths[s];
       // Request location and orientation of a ship
-      char* add_ship = "Ship of length  : <x-start> <y-start> <orientation>"; /// fix
+      char* add_ship = "Ship of length  : <x-start> <y-start> <orientation>"; // TODO: FIX length
       //add_ship[15] = length;
       ui_add_message("System", add_ship);
 
       char* ship_input = ui_read_input();
       pthread_mutex_lock(&lock);
 
-      // TODO: upper and lower case inputs
       int x = (int)toupper(ship_input[0]) - 65; // at least 0
       int y = atoi(&ship_input[2]);  // at least 0
       char char_orient = toupper(ship_input[4]); // H or V
@@ -134,6 +133,7 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
                 captain->send_ships[s][2] = length;
                 captain->send_ships[s][3] = orientation;
                 ui_init_ship(length, x, y, orientation);
+                ui_add_message("System", "Ship successfully placed");
                 valid = true;
               }
             }
@@ -147,6 +147,38 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
       }
     }
   }
+}
+
+bomb_t prepare_bomb (captain_t* captain){
+    bomb_t new_bomb; // new bomb to be prepared
+
+    bool valid = false; // bomb is initially invalid
+    while(!valid){
+        // Request coordinates for bomb
+        ui_add_message("System", "Send Bomb: <x-coordinate> <y-coordinate>");
+        char* bomb_input = ui_read_input();
+
+        pthread_mutex_lock(&lock);
+        int x = (int)toupper(bomb_input[0]) - 65; // at least 0
+        int y = atoi(&bomb_input[2]);  // at least 0
+
+        // Return input to ui
+        ui_add_message(captain->username, bomb_input);
+
+        // check if bomb is within bounds
+        if(!((x > -1) && (y > -1) && (x < BOARD_LENGTH) && (y < BOARD_HEIGHT))) {
+          ui_add_message("System", "Bomb not within bounds, try again");
+        } else {
+            new_bomb.cap_username = captain->username;
+            new_bomb.x = x;
+            new_bomb.y = y;
+            ui_add_message("System", "Bomb ready for deployment");
+            valid = true;
+        }
+        pthread_mutex_unlock(&lock);
+        free(bomb_input);
+    }
+    return new_bomb;
 }
 
 void update_ships (char xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]){
@@ -168,7 +200,7 @@ int main(int argc, char** argv) {
     /********************************
     * Parse command line arguments *
     ********************************/
-    // (from distributed systems lab)
+    /* (from distributed systems lab with David)
     if(argc != 4) {
       fprintf(stderr, "Usage: %s <server address> <server port>\n", argv[0]);
       exit(EXIT_FAILURE);
@@ -176,18 +208,18 @@ int main(int argc, char** argv) {
 
     char* server_address = argv[1];
     int server_port = atoi(argv[2]);
-
+    */
     /**********************************
     * Set-up listening client server  *
     ***********************************/
-    // Set up a socket (from distributed systems lab)
-    int cap_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if(cap_socket == -1) {
+    /* Set up a socket (from distributed systems lab)
+    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if(server_socket == -1) {
       perror("Socket");
       exit(2);
     }
-
-    // Listen at this address. We'll bind to port 0 to accept any available port
+    */
+    /* Listen at this address. We'll bind to port 0 to accept any available port
     struct sockaddr_in addr = {
       .sin_addr.s_addr = INADDR_ANY,
       .sin_family = AF_INET,
@@ -195,11 +227,11 @@ int main(int argc, char** argv) {
     };
 
         // Bind to the specified address
-    if(bind(cap_socket, (struct sockaddr*)&addr, sizeof(struct sockaddr_in))) {
+    if(bind(server_socket, (struct sockaddr*)&addr, sizeof(struct sockaddr_in))) {
       perror("bind");
       exit(2);
     }
-
+    */
     // get player's name
     char* your_full = NULL;
     size_t linecap = 0;
@@ -217,27 +249,39 @@ int main(int argc, char** argv) {
       else if (your_name[i] == '\0') // TODO: fix padding for username
         your_name[i] = ' ';
     }
-    p1_name[8] = '\0';    
+    your_name[8] = '\0';
 
     // make captain
     captain_t captain1;
     captain1.username = your_name; // cap length 8
     printf("Hello, Captain %s\n", captain1.username);
 
-    char player1_board[BOARD_LENGTH][BOARD_HEIGHT];
-    init_board(player1_board);
-    ui_init(p1_name);
-    // init ui
-    set_ships(&captain1, player1_board);
+    char your_board[BOARD_LENGTH][BOARD_HEIGHT];
+    init_board(your_board);
 
-    // send struct
-    write(cap_socket, captain1, sizeof(captain_t));
 
-    //update_ships ('D' ,5, player1_board);
-    //display_ships(player1_board);
+    ui_init(your_name); // init ui
+    set_ships(&captain1, your_board); // set captain's ships
+
+    // send captain to server
+    //write(server_socket, &captain1, sizeof(captain_t));
+
+    //while game not done
+    bomb_t new_bomb = prepare_bomb(&captain1); // prepare captain's bomb
+    // send captain's bomb to server
+    //write(server_socket, &new_bomb, sizeof(bomb_t));
+
+    // get coordinates from opponent's bomb
+    bomb_t opp_bomb;
+    read(server_socket, &opp_bomb, sizeof(bomb_t));
+    // update your captain's ships
+    updates_ships(opp_bomb.x, opp_bomb.y,  your_board);
+
+    //update_ships ('D' ,5, your_board);
+    //display_ships(your_board);
 
     // Clean up
-    close(cap_socket);
+    //close(server_socket);
 
     return 0;
 }
