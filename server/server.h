@@ -34,7 +34,7 @@ typedef struct ship{
   int x;
   int y;
   bool is_vertical;
-  int size;
+  int size; // check sum value
 } ship_t;
 
 typedef struct bomb{
@@ -97,9 +97,9 @@ bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[]);
    put a ship onto a player's board
     return: nothing
 */
-void put_ships(player_t player, ship_t* ships);
+void put_ships(player_t* player, ship_t* ships);
 
-void put_bomb(player_t player, bomb_t* bomb);
+void put_bomb(player_t* player, bomb_t* bomb);
 
 
 //   THREAD FUNCTIONS
@@ -174,7 +174,7 @@ void generate_random_bomb(bomb_t* bomb);
    checks whether a goal state has been reached
     return: true if game is on-going/has no winner
  */
-int game_not_over(bool check_player_1);
+bool game_over(player_t player);
 
 /*
    gets current time in milliseconds
