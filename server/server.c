@@ -43,8 +43,162 @@ void make_lobby() {
 }
 
 /*
+ *    Checking Tools
+ */
+
+void tool_printBoard(int board[BOARD_SIZE][BOARD_SIZE]) {
+    for (int x = 0; x < BOARD_SIZE; x++) {
+      for (int y = 0; y < BOARD_SIZE; y++)
+        printf("%d ", board[x][y]);
+      printf("\n");
+    }
+}
+
+void tool_initBoard(int board[BOARD_SIZE][BOARD_SIZE]) {
+  for (int x = 0; x < BOARD_SIZE; x++) 
+    for (int y = 0; y < BOARD_SIZE; y++)
+        board[x][y] = 0;
+}
+
+/*
  *    Tests
  */
+
+void test_isValidMove() {
+  player_t player;
+  
+  tool_initBoard(player.board);
+  printf("\n\nTEST: isValidMove()\n");
+  printf("Ok Ships\n");
+  ship_t ships[NUMBER_SHIPS] = {
+    0, 0, 1, 2,
+    0, 1, 1, 3, 
+    0, 2, 1, 3,
+    0, 3, 1, 4,
+    0, 4, 1, 5
+  };
+  printf("Expected: True\nActual: %d", is_valid_move(player, NULL, ships));
+  
+  tool_initBoard(player.board);
+  printf("\n\nTEST: isValidMove()\n");
+  printf("Overlapping Ships\n");
+  ship_t ships1[NUMBER_SHIPS] = {
+    0, 0, 0, 2,
+    0, 1, 0, 3, 
+    0, 2, 0, 3,
+    0, 3, 0, 4,
+    0, 4, 0, 5
+  };
+  printf("Expected: False\nActual: %d\n", is_valid_move(player, NULL, ships1));
+  
+  tool_initBoard(player.board);
+  printf("\n\nTEST: isValidMove()\n");
+  printf("Out of Bound Ships\n");
+  ship_t ships2[NUMBER_SHIPS] = {
+    0, 0, 0, 2,
+    9, 9, 0, 3, 
+    0, 2, 0, 3,
+    0, 3, 0, 4,
+    0, 4, 0, 5
+  };
+  printf("Expected: False\nActual: %d\n", is_valid_move(player, NULL, ships2));
+  
+}
+
+void test_putShips() {
+  
+  player_t player;
+  tool_initBoard(player.board);
+  printf("\n\nTEST: putShips()\n");
+  printf("Expected: Vertical Ships\n");
+  tool_printBoard(player.board);
+  ship_t ships[NUMBER_SHIPS] = {
+    0, 0, 1, 2,
+    0, 1, 1, 3, 
+    0, 2, 1, 3,
+    0, 3, 1, 4,
+    0, 4, 1, 5
+  };
+  printf("\n");
+  put_ships(&player, ships);
+  tool_printBoard(player.board);
+  
+  printf("\nExpected: Horizontal Ships");
+  tool_initBoard(player.board);
+  ship_t ships1[NUMBER_SHIPS] = {
+    0, 0, 0, 2,
+    1, 1, 0, 3, 
+    2, 2, 0, 3,
+    3, 3, 0, 4,
+    4, 4, 0, 5
+  };
+  printf("\n");
+  put_ships(&player, ships1);
+  tool_printBoard(player.board);
+  
+}
+
+void test_putBomb() {
+  
+  player_t player;
+  
+  tool_initBoard(player.board);
+  
+  printf("\n\nTEST: putBomb()\n");
+  tool_printBoard(player.board);
+  printf("\n");
+  bomb_t bomb;
+  generate_random_bomb(&bomb);
+  put_bomb(&player, &bomb);
+  tool_printBoard(player.board);
+  printf("\n");
+  generate_random_bomb(&bomb);
+  put_bomb(&player, &bomb);
+  tool_printBoard(player.board);
+  
+}
+
+void test_gameOver() {
+  player_t player;
+  
+  tool_initBoard(player.board);
+        
+  printf("\n\nTEST: game_over()\n");
+  printf("Expected: TRUE\nActual: %d", game_over(player));
+  
+  player.board[1][2] = 1;
+  printf("\n\nTEST: game_over()\n");
+  printf("Expected: FALSE\nActual: %d", game_over(player));
+  
+  player.board[1][2] = 2;
+  printf("\n\nTEST: game_over()\n");
+  printf("Expected: TRUE\nActual: %d", game_over(player));
+  
+  player.board[1][2] = 0;
+  printf("\n\nTEST: game_over()\n");
+  printf("Expected: TRUE\nActual: %d", game_over(player));
+  
+  player.board[1][2] = 1;
+  printf("\n\nTEST: game_over()\n");
+  printf("Expected: FALSE\nActual: %d", game_over(player));
+  
+  player.board[1][2] = 1;
+  printf("\n\nTEST: game_over()\n");
+  printf("Expected: FALSE\nActual: %d", game_over(player));
+  
+  player.board[9][9] = 1;
+  printf("\n\nTEST: game_over()\n");
+  printf("Expected: FALSE\nActual: %d", game_over(player));
+  
+  player.board[1][2] = 0;
+  printf("\n\nTEST: game_over()\n");
+  printf("Expected: FALSE\nActual: %d", game_over(player));
+  
+  player.board[9][9] = 0;
+  printf("\n\nTEST: game_over()\n");
+  printf("Expected: TRUE\nActual: %d", game_over(player));
+  
+}
 
 double test_getCurrentTimeMs() {
   return get_current_time_ms();
@@ -54,14 +208,15 @@ void test_setExpireTime(int seconds) {
   set_expire_time(seconds);
 }
 
-bool test_setAndTimeOut(int seconds, int wait_sec) {
-  set_expire_time(seconds);
+bool test_setAndTimeOut(int exp_sec, int wait_sec) {
+  set_expire_time(exp_sec);
   sleep(wait_sec);
   return time_out();
-  
 }
 
 void test(){
+  
+  test_gameOver();
   
   printf("\n\nTEST: generate_random_bomb()\n");
   bomb_t bomb;
@@ -83,12 +238,15 @@ void test(){
   generate_random_bomb(&bomb);  
   printf("%d, %d",bomb.x, bomb.y);
   
-  printf("\n\nTEST: time_out() == true\n");
-  printf("%d",test_setAndTimeOut(1, 2));
+  //printf("\n\nTEST: time_out() == true\n");
+  //printf("%d",test_setAndTimeOut(1, 2));
   
-  printf("\n\nTEST: time_out() == false\n");
-  printf("%d",test_setAndTimeOut(2, 1));
+  //printf("\n\nTEST: time_out() == false\n");
+  //printf("%d",test_setAndTimeOut(2, 1));
   
+  test_putBomb();
+  test_putShips();
+  test_isValidMove();
 }
 
 /*
@@ -133,13 +291,13 @@ void* thread_moderate_match(void* args) {
   bool player_1_turn = true;
 
   // check for exit state before next player's turn
-  while (!(exit_state = game_not_over(player_1_turn))) {
+  while (!(exit_state = game_over(player1))) { // checks if player1 still has a turn from !losing
     write_to_socket(player1, message, SHIP_MESSAGE_LENGTH);
     message = take_turn(player1);
     player_1_turn = !player_1_turn;
     
     // check for exit state before next player's turn
-    if (!(exit_state = game_not_over(player_1_turn)))
+    if (!(exit_state = game_over(player2))) // checks if player2 still has a turn from !losing
       break;
     write_to_socket(player2, message, SHIP_MESSAGE_LENGTH);
     message = take_turn(player2);
@@ -155,6 +313,7 @@ void* thread_moderate_match(void* args) {
   // TODO: collect threads
   return 0;
 }
+
 
 void* thread_player_listener(void* args) {
   // TODO: some major work needs to be done here
@@ -176,11 +335,13 @@ void* thread_player_listener(void* args) {
   return 0;
 }
 
+
 bool write_to_socket(player_t player, char* message, int length) {
   if (write(player.socket, message, sizeof(char)*length) == -1)
     return false;
   return true;
 }
+
 
 char* read_next(player_t player) {
   pthread_mutex_lock(&player.lock);
@@ -213,6 +374,7 @@ int open_connection_listener() {
 
     return s;
 }
+
 
 void connection_listener(player_t* player) {
 
@@ -255,6 +417,7 @@ void initialize_player(player_t* player, char* username, int socket, char* ip_ad
   pthread_mutex_init (&player->lock, NULL);
 }
 
+
 bool initialize_board(player_t player) {
   set_expire_time(WAIT_INIT); // set expiration
 
@@ -269,7 +432,7 @@ bool initialize_board(player_t player) {
         parse_message(message, NULL, ships);
 
         if (is_valid_move(player, NULL, ships)) {
-          put_ships(player, ships);
+          put_ships(&player, ships);
           return true;
         }
       }
@@ -277,6 +440,7 @@ bool initialize_board(player_t player) {
   }
   return false;
 }
+
 
 bool parse_message(char* message, bomb_t* bomb, ship_t* ships) {
   // TODO: error checking to not overrun message
@@ -301,6 +465,7 @@ bool parse_message(char* message, bomb_t* bomb, ship_t* ships) {
   return true;
 }
 
+
 char* take_turn(player_t player) {
   char* message = (char*) malloc(sizeof(char)*SHIP_MESSAGE_LENGTH);
   set_expire_time(WAIT_TURN);
@@ -317,7 +482,7 @@ char* take_turn(player_t player) {
         parse_message(message, &bomb, NULL);
 
         if (is_valid_move(player, &bomb, NULL)) {
-          put_bomb(player, &bomb);
+          put_bomb(&player, &bomb);
           return message;
           
         } else
@@ -328,7 +493,7 @@ char* take_turn(player_t player) {
   // timed_out: take turn for player
   bomb_t bomb;
   generate_random_bomb(&bomb);
-  put_bomb(player, &bomb);
+  put_bomb(&player, &bomb);
   // send other player about random bomb
   strncpy(message, player.username, USERNAME_LENGTH);
   message[USERNAME_LENGTH+PADDING_LENGTH] = bomb.x;
@@ -336,7 +501,7 @@ char* take_turn(player_t player) {
   return message;
 }
 
-bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[]) {
+bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[NUMBER_SHIPS]) {
   // bomb check
   if (bomb != NULL)
     return bomb->x < BOARD_SIZE && bomb->y < BOARD_SIZE;
@@ -350,26 +515,24 @@ bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[]) {
         return false;
 
     // prep
-    bool ships_are_valid = true;
     int temp_sea[BOARD_SIZE][BOARD_SIZE];
+    
     for (int i = 0; i < BOARD_SIZE; i++)
       for (int j = 0; j < BOARD_SIZE; j++)
         temp_sea[i][j] = 0;
 
-    // check
-    if (ships != NULL) {
       for (int k = 0; k < NUMBER_SHIPS; k++) {
         int x = ships[k].x;
         int y = ships[k].y;
         if (ships[k].is_vertical) { // place ships vertically
-          for (int i = 0; i < ships[k].size; i++)
-            if (y >= BOARD_SIZE)
+          for (int i = 0; i < ships[k].size; i++) 
+            if (x >= BOARD_SIZE && y >= BOARD_SIZE) // out-of-bound check
               return false;
             else
               temp_sea[x][y++]++;
         } else
           for (int i = 0; i < ships[k].size; i++)
-            if (x >= BOARD_SIZE)
+            if (x >= BOARD_SIZE && y >= BOARD_SIZE) // out-of-bound-check
               return false;
             else
               temp_sea[x++][y]++;
@@ -378,30 +541,30 @@ bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[]) {
       // if any spot has 2 pieces, return false
       for (int i = 0; i < BOARD_SIZE; i++)
         for (int j = 0; j < BOARD_SIZE; j++)
-          if (temp_sea[i][j] > 1)
+          if (temp_sea[i][j] > 1) 
             return false;
       return true;
-    }
   }
+  
   return false;
 }
 
-void put_ships(player_t player, ship_t* ships) {
-  // ships guranteed to be valid and fit
+void put_ships(player_t* player, ship_t ships[NUMBER_SHIPS]) {
+  // assumes: ships to be valid and fit into board
   for (int k = 0; k < NUMBER_SHIPS; k++) {
     int x = ships[k].x;
     int y = ships[k].y;
-    if (ships[k].is_vertical)  // place ships vertically
+    if (!ships[k].is_vertical)  // place ships vertically
       for (int i = 0; i < ships[k].size; i++)
-        player.board[x][y++] = SHIP_PRESENT;
+        player->board[x][y++] = SHIP_PRESENT;
     else
       for (int i = 0; i < ships[k].size; i++)
-        player.board[x++][y] = SHIP_PRESENT;
+        player->board[x++][y] = SHIP_PRESENT;
   }
 }
 
-void put_bomb(player_t player, bomb_t* bomb) {
-  player.board[bomb->x][bomb->y] = BOMB_PRESENT;
+void put_bomb(player_t* player, bomb_t* bomb) {
+  player->board[bomb->x][bomb->y] = BOMB_PRESENT;
 }
 
 
@@ -419,32 +582,27 @@ double get_current_time_ms() {
   return 1000 * tv.tv_sec + tv.tv_usec / 1000; // milliseconds
 }
 
+
 bool time_out() {
   return turn_expire_time < get_current_time_ms();
 }
+
 
 void set_expire_time(int seconds){
   turn_expire_time = get_current_time_ms() + seconds*1000;
 }
 
-int game_not_over(bool check_player_1) {
-  bool player_has_ships = false;
 
-  if (check_player_1) {
-    for (int i = 0; i < BOARD_SIZE && !player_has_ships; i++)
-      for (int j = 0; j < BOARD_SIZE && !player_has_ships; j++)
-        if(player1.board[i][j]) // true if there is a ship at i, j
-          player_has_ships = true;
-  } else {
-    for (int i = 0; i < BOARD_SIZE && !player_has_ships; i++)
-      for (int j = 0; j < BOARD_SIZE && !player_has_ships; j++)
-        if(player2.board[i][j]) // true if there is a ship at i, j
-          player_has_ships = true;
-  }
-  if (player_has_ships)
-    return 1;
-  return 0;
+bool game_over(player_t player) {
+    
+    for (int i = 0; i < BOARD_SIZE; i++)
+      for (int j = 0; j < BOARD_SIZE; j++)
+        if(player.board[i][j] == 1) // true if there is a ship at i, j
+          return false;
+
+  return true;
 }
+
 
 void generate_random_bomb(bomb_t* bomb) {
   srand(time(NULL));
