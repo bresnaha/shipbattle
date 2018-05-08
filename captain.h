@@ -7,12 +7,20 @@
 #define BOARD_LENGTH 10
 #define BOARD_HEIGHT 10
 #define NUM_SHIPS 5
-//#define SHIP_LENGTHS[NUM_SHIPS] {2,3,3,4,5}
+#define USERNAME_LENGTH 8
 
 typedef struct captain {
-    char* username;
+    char username[USERNAME_LENGTH+1];
     int send_ships[NUM_SHIPS][4];
 } captain_t;
+
+typedef struct bomb {
+    char cap_username[USERNAME_LENGTH+1];
+    int x;
+    int y;
+} bomb_t;
+
+
 
 /**
   * Initialize a game board to all water
