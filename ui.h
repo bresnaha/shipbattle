@@ -47,6 +47,11 @@ char* ui_read_input();
  */
 void ui_init_ship(int length, int col, int row, bool vert);
 
+/*helper function for ui_hit and ui_miss*/
+void ui_plane(int col, int row, char ** board, bool hit);
+void* ui_hit_bomb(void* arg);
+void* ui_miss_bomb(void* arg);
+
 /**
  * Marks one of your ships as being hit.
  *

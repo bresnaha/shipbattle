@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <time.h>
+#include <pthread.h>
 
 #define WIDTH 78
 #define SHIP_HEIGHT 20
@@ -275,7 +276,7 @@ void ui_init_ship(int length, int col, int row, bool vert){
  *                
  */
 
-void ui_hit(int col, int row/*, char ** board*/){
+void ui_hit(int col, int row, char ** board){
   /*
     /  
   <===≤  ~  # * # ~
@@ -286,25 +287,147 @@ void ui_hit(int col, int row/*, char ** board*/){
          ~  # & # ~
          ~  # X # ~
   */
-  int plane_col;
-  int plane_row;
 	//hit animation
 	//do something pretty
+  ui_plane(col, row, board, true);
+}
+
+void ui_plane(int col, int row, char ** board, bool hit){
+  pthread_t bomb_thread;
+  int plane_col  = 20;
+  int plane_row; = row;
+  while(plane_col > -13){
+  	
+  	if(plane_col > col){
+  		if(hit){
+  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -1 + plane_col + 22 + BOARD_1_X,'#');
+  		} else {
+  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -1 + plane_col + 22 + BOARD_1_X,'~');
+  		}
+  	}
+
+  	// add plane
+  	// if for printing top wing
+  	if((plane_row - 1) >= 0 && (plane_col - 1) >= 0 && (plane_col - 1) <=20){
+  		//print the wing('/') at (col-1, row-1)
+  		mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -1 + plane_col + 22 + BOARD_1_X,'/');
+  	}
+  	// dont let top wing leave trails
+  	if((plane_row - 1) >= 0 && (plane_col - 2) >= 0 && (plane_col - 2) <=20){
+  		//print the wing('/') at (col-1, row-1)
+  		if (plane_col % 2)
+  		{
+  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -2 + plane_col + 22 + BOARD_1_X, board[plane_row - 1][(plane_col-2)/2]);
+  		} else {
+  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -2 + plane_col + 22 + BOARD_1_X,' ');
+  		}
+  		
+  	}
+  	// if for printing plane head 
+  	if(plane_col >= 0 && plane_col <=20){
+  		//print the wing('<') at (col, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y, plane_col + 22 + BOARD_1_X,'<');
+  	}
+  	// if for printing plane body 1
+  	if((plane_col-1) >= 0 && (plane_col-1) <=20){
+  		//print the wing('=') at (col-1, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y,-1 + plane_col + 22 + BOARD_1_X,'=');
+  	}
+  	// if for printing plane body 2
+  	if((plane_col-2) >= 0 && (plane_col-2) <=20){
+  		//print the wing('=') at (col-2, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y,-2 + plane_col + 22 + BOARD_1_X,'=');
+  	}
+  	// if for printing plane body 3
+  	if((plane_col-3) >= 0 && (plane_col-3) <=20){
+  		//print the wing('=') at (col-3, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y,-3 + plane_col + 22 + BOARD_1_X,'=');
+  	}
+  	// if for printing plane tail
+  	if((plane_col-4) >= 0 && (plane_col-4) <=20){
+  		//print the wing('≤') at (col-4, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y,-4 + plane_col + 22 + BOARD_1_X,'≤');
+  	}
+  	// dont let plane body leave trails
+  	if((plane_col - 5) >= 0 && (plane_col - 5) <=20){
+  		//print the wing('/') at (col-1, row-1)
+  		if (plane_col % 2)
+  		{
+  			mvaddch(plane_row + 2 + BOARD_1_Y, -5 + plane_col + 22 + BOARD_1_X, board[plane_row][(plane_col-5)/2]);
+  		} else {
+  			mvaddch(plane_row + 2 + BOARD_1_Y, -5 + plane_col + 22 + BOARD_1_X,' ');
+  		}
+  		
+  	}
+  	// if for printing bot wing
+  	if((plane_row + 1) <= 10 && (plane_col - 1) >= 0 && (plane_col - 1) <=20){
+  		//print the wing('\') at (col-1, row+1)
+  		mvaddch(1 + plane_row + 2 + BOARD_1_Y,-1 + plane_col + 22 + BOARD_1_X,'=');
+  	}
+  	// dont bot wing leave trails
+  	if((plane_row + 1) >= 0 && (plane_col - 2) >= 0 && (plane_col - 2) <=20){
+  		//print the wing('/') at (col-1, row-1)
+  		if (plane_col % 2)
+  		{
+  			mvaddch(1 + plane_row + 2 + BOARD_1_Y, -2 + plane_col + 22 + BOARD_1_X, board[plane_row + 1][(plane_col-2)/2]);
+  		} else {
+  			mvaddch(1 + plane_row + 2 + BOARD_1_Y, -2 + plane_col + 22 + BOARD_1_X,' ');
+  		}
+  		
+  	}
+  	// if for starting dropping bomb
+  	if(plane_col == (plane_row - 5)){
+  		// if its a hit or a miss
+  		if (hit) {
+  			if(pthread_create(&bomb_thread, NULL, ui_hit_bomb, NULL)) {
+    		perror("pthread_create failed");
+    		exit(2);
+ 		 }
+  		} else {
+  			if(pthread_create(&bomb_thread, NULL, ui_miss_bomb, NULL)) {
+    		perror("pthread_create failed");
+    		exit(2);
+  		}
+  	}
+  	refresh();
+  	nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  	plane_col--;
+  }
+  if(pthread_join(bomb_thread, NULL)) {
+    perror("pthread_join failed");
+    exit(2);
+  }
+ }
+}
+
+void* ui_hit_bomb(void* arg){
   mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '*');
-  refresh();
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '•');
-  refresh();
   mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '.');
-  refresh();
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
   mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '@');
-  refresh();
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
   mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '%');
-  refresh();
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
   mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '&');
-  refresh();
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
   mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'X');
-	refresh();
+  return NULL;
+}
+
+void* ui_miss_bomb(void* arg){
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '*');
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '.');
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '@');
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'W');
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'w');
+  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '~');
+  return NULL;
 }
 
 /**
@@ -315,34 +438,19 @@ void ui_hit(int col, int row/*, char ** board*/){
  *                
  */
 
-void ui_miss(int col, int row){
+void ui_miss(int col, int row, char** board){
  /*
     /  
-  <===≤  ~  # * # ~
-    \    ~  # • # ~
-         ~  # . # ~
-         ~  # W # ~
-         ~  # w # ~
-         ~  # ~ # ~
+  <===≤  ~  ~ * ~ ~
+    \    ~  ~ • ~ ~
+         ~  ~ . ~ ~
+         ~  ~ W ~ ~
+         ~  ~ w ~ ~
+         ~  ~ ~ ~ ~
   */
-  int plane_col;
-  int plane_row;
   //miss animation
   //do something pretty
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '*');
-  refresh();
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '•');
-  refresh();
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '.');
-  refresh();
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '@');
-  refresh();
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'W');
-  refresh();
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'w');
-  refresh();
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '~');
-  refresh();
+  ui_plane(col, row, board, false);
 }
 
 /**
