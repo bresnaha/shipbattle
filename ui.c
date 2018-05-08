@@ -7,8 +7,8 @@
 #include <stdbool.h>
 
 #define WIDTH 78
-#define SHIP_HEIGHT 24 // pad of 6 on top and bot
-#define CHAT_HEIGHT 5
+#define SHIP_HEIGHT 24
+#define CHAT_HEIGHT 10
 #define INPUT_HEIGHT 1
 #define USERNAME_DISPLAY_MAX 8
 
@@ -26,12 +26,10 @@ WINDOW* inputwin;
 char* messages[CHAT_HEIGHT];
 size_t num_messages = 0;
 
-// TODO: Fix board letters on top, nums on left side, fix water
-
 /**
  * Initialize the chat user interface. Call this once at startup.
  */
-void ui_init() {
+void ui_init(char* username) {
   // Create the main window
   mainwin = initscr();
   if(mainwin == NULL) {
@@ -56,12 +54,18 @@ void ui_init() {
   // print player's empty board
   int rowcount = 0;
   int colcount = 0;
+  int letter = 0;
+
   for (int row = 2+ BOARD_1_Y; row < 12 + BOARD_1_Y; ++row) {
   	for (int col = BOARD_1_X; col < 1+21 + BOARD_1_X; ++col) {
   		if(col == BOARD_1_X) { 
                   mvaddch(row,col,(char) rowcount+48/*65*/);
   			colcount = 0;
   		} else if (colcount == 1){
+        if(row == 2+ BOARD_1_Y && col > BOARD_1_X){
+          mvaddch(row-1,col,(char) letter+65);
+          letter++;
+       }
   			mvaddch(row,col, '~');
   			colcount = 0;
   		} else {
@@ -75,12 +79,17 @@ void ui_init() {
   // print opponent's empty board
   rowcount = 0;
   colcount = 0;
+  letter = 0;
   for (int row = 2+ BOARD_2_Y; row < 12 + BOARD_2_Y; ++row) {
   	for (int col = BOARD_2_X; col < 1 + 21 + BOARD_2_X; ++col) {
   		if(col == BOARD_2_X) { 
                   mvaddch(row,col, (char) rowcount+48/*65*/);
   			colcount = 0;
   		} else if (colcount == 1){
+        if(row == 2+ BOARD_2_Y && col > BOARD_2_X){
+          mvaddch(row-1,col,(char) letter+65);
+          letter++;
+       }
   			mvaddch(row,col, '~');
   			colcount = 0;
   		} else {
@@ -90,7 +99,8 @@ void ui_init() {
   	}
   	rowcount++;
   }
-
+ mvprintw(BOARD_1_Y,BOARD_1_X,username);
+ mvprintw(BOARD_2_Y,BOARD_2_X,"Opponent");
   // Refresh the display
   refresh();
 }
@@ -98,7 +108,7 @@ void ui_init() {
 // Clear the chat window (refresh required)
 void ui_clear_chat() {
   for(int i=0; i<WIDTH; i++) {
-    for(int j=0; j<CHAT_HEIGHT; j++) {
+    for(int j=0; j<CHAT_HEIGHT-1; j++) {
       mvwaddch(chatwin, 1+j, 1+i, ' ');
     }
   }
@@ -118,14 +128,14 @@ void ui_add_message(char* username, char* message) {
   ui_clear_chat();
   
   // Free the oldest message if it will be lost
-  if(num_messages == CHAT_HEIGHT) {
-    free(messages[CHAT_HEIGHT-1]);
+  if(num_messages == CHAT_HEIGHT-1) {
+    free(messages[CHAT_HEIGHT-2]);
   } else {
     num_messages++;
   }
   
   // Move messages up
-  memmove(&messages[1], &messages[0], sizeof(char*) * (CHAT_HEIGHT - 1));
+  memmove(&messages[1], &messages[0], sizeof(char*) * (CHAT_HEIGHT - 2));
   
   // Make space for the username and message
   messages[0] = malloc(sizeof(char*) * (WIDTH + 1));
@@ -162,7 +172,7 @@ void ui_add_message(char* username, char* message) {
     
     // Display the messages
     for(int i=0; i<num_messages; i++) {
-      mvwaddstr(chatwin, CHAT_HEIGHT - i, 1, messages[i]);
+      mvwaddstr(chatwin, CHAT_HEIGHT - i-1, 1, messages[i]);
     }
     wrefresh(chatwin);
     wrefresh(inputwin);

@@ -3,8 +3,10 @@
 #include <stdbool.h>
 /**
  * Initialize the chat user interface. Call this once at startup.
+ * \param username  The username string. Truncated to 8 characters by default.
+ *                  This function does *not* take ownership of this memory.
  */
-void ui_init();
+void ui_init(char* username);
 
 /**
  * Add a message to the chat window. If username is NULL, the message is
