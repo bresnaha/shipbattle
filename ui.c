@@ -9,19 +9,18 @@
 #include <pthread.h>
 
 #define WIDTH 78
-#define SHIP_HEIGHT 20
+#define SHIP_HEIGHT 30
 #define CHAT_HEIGHT 10
 #define INPUT_HEIGHT 1
 #define USERNAME_DISPLAY_MAX 8
 
-#define BOARD_1_Y 6
-#define BOARD_2_Y 6
+#define BOARD_1_Y 16
+#define BOARD_2_Y 16
 #define BOARD_1_X 12
 #define BOARD_2_X 45
 
 #define BOARD_LENGTH 10
 #define BOARD_HEIGHT 10
-
 
 WINDOW* mainwin;
 WINDOW* shipwin;
@@ -35,6 +34,8 @@ size_t num_messages = 0;
  * Initialize the chat user interface. Call this once at startup.
  */
 void ui_init(char* username) {
+  // ASCII Art by Matthew Bace http://ascii.co.uk/art/battleship
+  char* battleship = "                                     |__\n                                     |\\/\n                                     ---\n                                     / | [\n                              !      | |||\n                            _/|     _/|-++'\n                        +  +--|    |--|--|_ |-\n                     { /|__|  |/\\__|  |--- |||__/\n                    +---------------___[}-_===_.'____                 /\\ \n                ____`-' ||___-{]_| _[}-  |     |_[___\\==--            \\/   _\n __..._____--==/___]_|__|_____________________________[___\\==--____,------' .7\n|                                                               charlie-213/\n \\_________________________________________________________________________|";
   // Create the main window
   mainwin = initscr();
   if(mainwin == NULL) {
@@ -60,7 +61,7 @@ void ui_init(char* username) {
   int rowcount = 0;
   int colcount = 0;
   int letter = 0;
-
+  mvprintw(2,0,battleship);
   for (int row = 2+ BOARD_1_Y; row < 12 + BOARD_1_Y; ++row) {
   	for (int col = BOARD_1_X; col < 1+21 + BOARD_1_X; ++col) {
   		if(col == BOARD_1_X) { 
