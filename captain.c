@@ -154,21 +154,21 @@ void set_opp_ships (captain_t* opponent, char opp_board[BOARD_LENGTH][BOARD_HEIG
     int x; // starting x coordinate
     int y; // starting y coordinate
     int length; // length of ship
-    int orientatin; // orientation of ship (vertical)
+    int orientation; // orientation of ship (vertical)
 
 
     for(int s = 0; s < NUM_SHIPS; s++){
-        x = captain->send_ships[s][3];
-        y = captain->send_ships[s][3];
-        length = captain->send_ships[s][3];
-        orientation = captain->send_ships[s][3];
+        x = opponent->send_ships[s][3];
+        y = opponent->send_ships[s][3];
+        length = opponent->send_ships[s][3];
+        orientation = opponent->send_ships[s][3];
         if(orientation == 0) { // horizontal
             for(int i = x; i < x + length; i++){
-                board [i][y] = '#' // add to ui
+                opp_board [i][y] = '#'; // add to ui
             }
         } else { // vertical
             for(int i = y; i < y + length; i++){
-                board [x][i] = '#' // add to ui
+                opp_board [x][i] = '#'; // add to ui
             }
 
         } // if
@@ -216,6 +216,16 @@ void update_your_ships (int xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGH
         // check if ship is sunk (in server)
     } else {
         ui_miss(xpos, ypos, board);
+    }
+}
+
+void update_opp_ships (int xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]){
+    if(board[xpos][ypos] == '#'){
+        ui_hit_opp(xpos, ypos);
+
+        // check if ship is sunk (in server)
+    } else {
+        ui_miss_opp(xpos, ypos);
     }
 }
 
@@ -293,9 +303,10 @@ int main(int argc, char** argv) {
 
     // make opponent's board
     captain_t opponent;
+    // read(server_socket, &opponent, sizeof(captain_t));
     char opp_board[BOARD_LENGTH][BOARD_HEIGHT];
     init_board(opp_board);
-    set_opp_ships(opponent, opp_board);
+    set_opp_ships(&opponent, opp_board);
 
 
     //while game not done
@@ -306,7 +317,7 @@ int main(int argc, char** argv) {
         //write(server_socket, &your_bomb, sizeof(bomb_t));
 
         // update your own captain's board
-        update_ships(your_bomb.x, your_bomb.y, opp_board);
+        update_your_ships(your_bomb.x, your_bomb.y, opp_board);
 
         // get coordinates from opponent's bomb
         bomb_t opp_bomb;
@@ -314,15 +325,13 @@ int main(int argc, char** argv) {
 
         // check if game is over
         // update your captain's ships
-        update_ships(opp_bomb.x, opp_bomb.y,  your_board);
+        update_opp_ships(opp_bomb.x, opp_bomb.y,  your_board);
 
-        
+
     }
 
     // Display winner's username
-    ui_add_message("System:", winner)
-    //update_ships ('D' ,5, your_board);
-    //display_ships(your_board);
+    ui_add_message("System:", winner);
 
     // Clean up
     //close(server_socket);
