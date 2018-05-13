@@ -18,6 +18,7 @@ typedef struct bomb {
     char* cap_username;
     int x;
     int y;
+    bool hit;
 } bomb_t;
 
 
@@ -45,14 +46,6 @@ void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]);
 void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
-  * set_opp_ships:     Initialize the opponent's ships to a game board
-  *
-  * \param opponent    The capain of the opposing the fleet!
-  * \param opp_board   The 2D char array game board
-  */
-void set_opp_ships (captain_t* opponent, char opp_board[BOARD_LENGTH][BOARD_HEIGHT]);
-
-/**
   * prepare_bomb:   Prepare a captain's bomb to send to server
   *
   * \param captain  The captain preparing the bomb
@@ -60,10 +53,18 @@ void set_opp_ships (captain_t* opponent, char opp_board[BOARD_LENGTH][BOARD_HEIG
 bomb_t prepare_bomb (captain_t* captain);
 
 /**
-  * update_ships: Updates a captain's guesses to a game board
+  * update_your_board: Updates a captain's guesses to a game board
   *
-  * \param xpos   The int x coordinate of the bomb
-  * \param ypos   The int y coordinate of the bomb
+  * \param bomb   The bomb the opponent sent
   * \param board  The 2D char array game board
   */
-void update_your_ships (int xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]);
+void update_your_board (bomb_t bomb, char board[BOARD_LENGTH][BOARD_HEIGHT]);
+
+/**
+  * update_guess_board Updates a captain's guesses to a game board
+  *
+  * \param bomb   The bomb the captain sent
+  * \param board  The 2D char array game board
+  */
+
+void update_guess_board (bomb_t bomb, char board[BOARD_LENGTH][BOARD_HEIGHT]);
