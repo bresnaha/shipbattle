@@ -297,92 +297,97 @@ void ui_hit(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]){
 
 void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hit){
   pthread_t bomb_thread;
+  int repl_top = 9;
+  int repl_mid = 9;
+  int repl_bot = 9;
   pos* arg = malloc(sizeof(int)*2);
   arg->row = row;
   arg->col = col;
   int plane_col  = 20;
   int plane_row = row;
-  while(plane_col > -13){
+  while(plane_col > -14){
   	
+    /*// if plane hasn't reached the bomb spot make sure that it shows the correct symbol 
   	if(plane_col > col){
   		if(hit){
   			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -1 + plane_col + 22 + BOARD_1_X,'#');
   		} else {
   			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -1 + plane_col + 22 + BOARD_1_X,'~');
   		}
-  	}
+  	}*/
 
   	// add plane
   	// if for printing top wing
-  	if((plane_row - 1) >= 0 && (plane_col - 1) >= 0 && (plane_col - 1) <=20){
+  	if((plane_row - 1) >= 0 && (plane_col + 1) >= 0 && (plane_col + 2) <=20){
   		//print the wing('/') at (col-1, row-1)
-  		mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -1 + plane_col + 22 + BOARD_1_X,'/');
+  		mvaddch(-1 + plane_row + 2 + BOARD_1_Y, 2 + plane_col + BOARD_1_X,'/');
   	}
   	// dont let top wing leave trails
-  	if((plane_row - 1) >= 0 && (plane_col - 2) >= 0 && (plane_col - 2) <=20){
+  	if((plane_row - 1) >= 0 && (plane_col + 3) >= 1 && (plane_col + 3) <=20){
   		//print the wing('/') at (col-1, row-1)
-  		if (plane_col % 2)
-  		{
-  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -2 + plane_col + 22 + BOARD_1_X, board[plane_row - 1][(plane_col-2)/2]);
+  		if (plane_col % 2) {
+  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, 3 + plane_col + BOARD_1_X, board[repl_top][plane_row - 1]);
+        repl_top--;
   		} else {
-  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -2 + plane_col + 22 + BOARD_1_X,' ');
+  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, 3 + plane_col + BOARD_1_X,' ');
   		}
   		
   	}
   	// if for printing plane head 
-  	if(plane_col >= 0 && plane_col <=20){
-  		//print the wing('<') at (col, row)
-  		mvaddch(plane_row + 2 + BOARD_1_Y, plane_col + 22 + BOARD_1_X,'<');
+  	if(plane_col >= 1 && plane_col <=20){
+  		//print the head('<') at (col, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y, plane_col + BOARD_1_X,'<');
   	}
   	// if for printing plane body 1
-  	if((plane_col-1) >= 0 && (plane_col-1) <=20){
-  		//print the wing('=') at (col-1, row)
-  		mvaddch(plane_row + 2 + BOARD_1_Y,-1 + plane_col + 22 + BOARD_1_X,'=');
+  	if((plane_col+1) >= 1 && (plane_col+1) <=20){
+  		//print the body('=') at (col-1, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y,1 + plane_col + BOARD_1_X,'=');
   	}
   	// if for printing plane body 2
-  	if((plane_col-2) >= 0 && (plane_col-2) <=20){
-  		//print the wing('=') at (col-2, row)
-  		mvaddch(plane_row + 2 + BOARD_1_Y,-2 + plane_col + 22 + BOARD_1_X,'=');
+  	if((plane_col+2) >= 1 && (plane_col+2) <=20){
+  		//print the body('=') at (col-2, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y,2 + plane_col + BOARD_1_X,'=');
   	}
   	// if for printing plane body 3
-  	if((plane_col-3) >= 0 && (plane_col-3) <=20){
-  		//print the wing('=') at (col-3, row)
-  		mvaddch(plane_row + 2 + BOARD_1_Y,-3 + plane_col + 22 + BOARD_1_X,'=');
+  	if((plane_col+3) >= 1 && (plane_col+3) <=20){
+  		//print the body('=') at (col-3, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y,3 + plane_col + BOARD_1_X,'=');
   	}
   	// if for printing plane tail
-  	if((plane_col-4) >= 0 && (plane_col-4) <=20){
-  		//print the wing('≤') at (col-4, row)
-  		mvaddch(plane_row + 2 + BOARD_1_Y,-4 + plane_col + 22 + BOARD_1_X,ACS_LEQUAL);
+  	if((plane_col+4) >= 1 && (plane_col+4) <=20){
+  		//print the tail('≤') at (col-4, row)
+  		mvaddch(plane_row + 2 + BOARD_1_Y,4 + plane_col + BOARD_1_X,ACS_LEQUAL);
   	}
   	// dont let plane body leave trails
-  	if((plane_col - 5) >= 0 && (plane_col - 5) <=20){
+  	if((plane_col + 5) >= 1 && (plane_col + 5) <=20){
   		//print the wing('/') at (col-1, row-1)
-  		if (plane_col % 2)
-  		{
-  			mvaddch(plane_row + 2 + BOARD_1_Y, -5 + plane_col + 22 + BOARD_1_X, board[plane_row][(plane_col-5)/2]);
+  		if (plane_col % 2) {
+  			mvaddch(plane_row + 2 + BOARD_1_Y, 5 + plane_col + BOARD_1_X, board[repl_mid][plane_row]);
+        repl_mid--;
   		} else {
-  			mvaddch(plane_row + 2 + BOARD_1_Y, -5 + plane_col + 22 + BOARD_1_X,' ');
+  			mvaddch(plane_row + 2 + BOARD_1_Y, 5 + plane_col + BOARD_1_X,' ');
   		}
   		
   	}
+
   	// if for printing bot wing
-  	if((plane_row + 1) <= 10 && (plane_col - 1) >= 0 && (plane_col - 1) <=20){
-  		//print the wing('\') at (col-1, row+1)
-  		mvaddch(1 + plane_row + 2 + BOARD_1_Y,-1 + plane_col + 22 + BOARD_1_X,'=');
+  	if((plane_row + 1) < 10 && (plane_col + 1) >= 0 && (plane_col + 2) <=20){
+  		//print the wing('\') at (col+1, row+1)
+  		mvaddch(1 + plane_row + 2 + BOARD_1_Y,2 + plane_col + BOARD_1_X,'\\');
   	}
   	// dont bot wing leave trails
-  	if((plane_row + 1) >= 0 && (plane_col - 2) >= 0 && (plane_col - 2) <=20){
-  		//print the wing('/') at (col-1, row-1)
-  		if (plane_col % 2)
-  		{
-  			mvaddch(1 + plane_row + 2 + BOARD_1_Y, -2 + plane_col + 22 + BOARD_1_X, board[plane_row + 1][(plane_col-2)/2]);
+  	if((plane_row + 1) < 10 && (plane_col + 3) >= 1 && (plane_col + 3) <=20){
+  		//print the wing('/') at (col+1, row-1)
+  		if (plane_col % 2) {
+  			mvaddch(1 + plane_row + 2 + BOARD_1_Y, 3 + plane_col + BOARD_1_X, board[repl_bot][plane_row + 1]);
+        repl_bot--;
   		} else {
-  			mvaddch(1 + plane_row + 2 + BOARD_1_Y, -2 + plane_col + 22 + BOARD_1_X,' ');
+  			mvaddch(1 + plane_row + 2 + BOARD_1_Y, 3 + plane_col + BOARD_1_X,' ');
   		}
   		
   	}
   	// if for starting dropping bomb
-  	if(plane_col == (plane_row - 5)){
+  	if(plane_col == ((col * 2) -5 )){
   		// if its a hit or a miss
   		if (hit) {
   			if(pthread_create(&bomb_thread, NULL, ui_hit_bomb, (void*) arg)) {
@@ -395,6 +400,7 @@ void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hi
     		exit(2);
   		}
   	}
+  }
   	refresh();
   	nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
   	plane_col--;
@@ -404,24 +410,24 @@ void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hi
     exit(2);
   }
  }
-}
+
 
 void* ui_hit_bomb(void* arg){
   pos* hit_location = (pos*)arg;
-  int col = hit_location->col;
+  int col = hit_location->col + 1;
   int row = hit_location->row;
   free(arg);
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '*');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '*');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '.');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '.');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '@');
+  mvaddch(row + BOARD_1_Y + 2, col * 2+ BOARD_1_X, '@');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '%');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '%');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '&');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '&');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'X');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, 'X');
   return NULL;
 }
 
@@ -430,17 +436,17 @@ void* ui_miss_bomb(void* arg){
   int col = hit_location->col;
   int row = hit_location->row;
   free(arg);
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '*');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '*');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '.');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '.');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '@');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '@');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'W');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, 'W');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), 'w');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, 'w');
   nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
-  mvaddch(row + BOARD_1_Y + 2, col + BOARD_1_X + 1 + (col/2), '~');
+  mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '~');
   return NULL;
 }
 
@@ -477,7 +483,7 @@ void ui_miss(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]){
  */
  
 void ui_hit_opp(int col, int row){
-	mvaddch(row + BOARD_2_Y + 2, col + BOARD_2_X + 1 + (col/2), 'X');
+  mvaddch(row + BOARD_2_Y + 2, col * 2 + BOARD_2_X, 'X');
 	refresh();
 }
 
@@ -490,7 +496,7 @@ void ui_hit_opp(int col, int row){
  */
 
 void ui_miss_opp(int col, int row){
-	mvaddch(row + BOARD_2_Y + 2, col + BOARD_2_X + 1 + (col/2), 'O');
+	mvaddch(row + BOARD_2_Y + 2, col * 2 + BOARD_2_X, '0');
 	refresh();
 }
 
