@@ -23,40 +23,47 @@ typedef struct bomb {
 
 
 /**
-  * Initialize a game board to all water
+  * init_board:   Initialize a game board to all water '~'
   *
-  * \param board  The 2D char array board.
+  * \param board  The 2D char array game board
   */
 void init_board(char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
-  * display_ships: display a game board
+  * display_ships:  Display a game board
   *
-  * \param board - 2D char array
+  * \param board    The 2D char array game board
   */
 void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
-  * set_ships: initialize a captain's ships to a game board
+  * set_ships:      Initialize a captain's ships to a game board
   *
-  * \param captain  The captain string. Truncated to 8 characters by default
-  *                 The captain of the fleet!
-  * \param board    The 2D char array board.
+  * \param captain  The captain of your fleet!
+  * \param board    The 2D char array game board
   */
 void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
-  * update_ships: updates a captain's guesses to a game board
+  * set_opp_ships:     Initialize the opponent's ships to a game board
   *
-  * \param xpos   The int x coordinate of the bomb
-  * \param ypos   The int y coordinate of the bomb
-  * \param board  The 2D char array board.
+  * \param opponent    The capain of the opposing the fleet!
+  * \param opp_board   The 2D char array game board
   */
-void update_ships (int xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]);
+void set_opp_ships (captain_t* opponent, char opp_board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
-  * prepare_bomb: prepare a captain's bomb to send to server
+  * prepare_bomb:   Prepare a captain's bomb to send to server
   *
   * \param captain  The captain preparing the bomb
   */
 bomb_t prepare_bomb (captain_t* captain);
+
+/**
+  * update_ships: Updates a captain's guesses to a game board
+  *
+  * \param xpos   The int x coordinate of the bomb
+  * \param ypos   The int y coordinate of the bomb
+  * \param board  The 2D char array game board
+  */
+void update_your_ships (int xpos, int ypos, char board[BOARD_LENGTH][BOARD_HEIGHT]);
