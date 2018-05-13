@@ -14,8 +14,8 @@
 #define INPUT_HEIGHT 1
 #define USERNAME_DISPLAY_MAX 8
 
-#define BOARD_1_Y 16
-#define BOARD_2_Y 16
+#define BOARD_1_Y 17
+#define BOARD_2_Y 17
 #define BOARD_1_X 12
 #define BOARD_2_X 45
 
