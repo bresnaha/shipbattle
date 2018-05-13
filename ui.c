@@ -483,7 +483,7 @@ void ui_miss(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]){
  */
  
 void ui_hit_opp(int col, int row){
-	mvaddch(row + BOARD_2_Y + 2, col + BOARD_2_X + 1 + (col/2), 'X');
+  mvaddch(row + BOARD_2_Y + 2, col * 2 + BOARD_2_X, 'X');
 	refresh();
 }
 
@@ -496,7 +496,7 @@ void ui_hit_opp(int col, int row){
  */
 
 void ui_miss_opp(int col, int row){
-	mvaddch(row + BOARD_2_Y + 2, col + BOARD_2_X + 1 + (col/2), 'O');
+	mvaddch(row + BOARD_2_Y + 2, col * 2 + BOARD_2_X, '0');
 	refresh();
 }
 
