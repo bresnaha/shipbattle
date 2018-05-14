@@ -30,6 +30,20 @@
 #define PADDING_LENGTH 1
 #define IP_LENGTH 16
 
+typedef struct player_msg {
+  char* username;
+  int ships[NUMBER_SHIPS][4];
+} player_msg_t;
+
+typedef struct bomb_msg {
+    char* username;
+    int x;
+    int y;
+    bool hit;
+    int game_over; // 0 - still playing -1 - lose +1 - win
+} bomb_msg_t;
+
+
 typedef struct ship{
   int x;
   int y;
