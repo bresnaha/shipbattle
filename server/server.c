@@ -31,9 +31,11 @@ pthread_t player_2_listener;
 void make_lobby() {
 
   // gather two incoming connections
-  open_connection_listener();
+  listener_socket = open_connection_listener();
+    
   connection_listener(&player1);
   connection_listener(&player2);
+  debug("established connections with player1 and player2");
 
   // create thread for lobby
   pthread_create(&match_lobby, NULL, thread_moderate_match, NULL);
