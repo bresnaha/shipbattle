@@ -126,6 +126,34 @@ void ui_set_opp_name(char* username){
   refresh();
 }
 
+// function to help prevent weirdness from staying on the board
+void ui_refresh_board(char board [BOARD_LENGTH][BOARD_HEIGHT]){
+// print player's empty board
+  int rowcount = 0;
+  int colcount = 0;
+  int letter = 0;
+  for (int row = 2+ BOARD_1_Y; row < 12 + BOARD_1_Y; ++row) {
+    for (int col = BOARD_1_X; col < 1+21 + BOARD_1_X; ++col) {
+      if(col == BOARD_1_X) { 
+        mvaddch(row,col,(char) rowcount+48/*65*/);
+        colcount = 0;
+      } else if (colcount == 1){
+        if(row == 2+ BOARD_1_Y && col > BOARD_1_X){
+          mvaddch(row-1,col,(char) letter+65);
+          letter++;
+       }
+        //mvaddch(row,col, board[rowcount][letter]);
+        colcount = 0;
+      } else {
+        mvaddch(row,col, ' ');
+        colcount = 1;
+      }
+    }
+    rowcount++;
+  }
+  refresh();
+}
+
 // Clear the chat window (refresh required)
 void ui_clear_chat() {
   for(int i=0; i<WIDTH; i++) {
@@ -427,10 +455,13 @@ void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hi
   	nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
   	plane_col--;
   }
-  if(pthread_join(bomb_thread, NULL)) {
+  /*if(pthread_join(bomb_thread, NULL)) {
     perror("pthread_join failed");
     exit(2);
-  }
+  }*/
+  pthread_mutex_lock(&ui_lock);
+  ui_refresh_board(board);
+  pthread_mutex_unlock(&ui_lock);
  }
 
 
@@ -531,7 +562,7 @@ void ui_miss(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]){
  */
  
 void ui_hit_opp(int col, int row){
-  mvaddch(row + BOARD_2_Y + 2, col * 2 + BOARD_2_X, 'X');
+  mvaddch(row + BOARD_2_Y + 2, col * 2 + BOARD_2_X +2, 'X');
 	refresh();
 }
 
@@ -544,7 +575,7 @@ void ui_hit_opp(int col, int row){
  */
 
 void ui_miss_opp(int col, int row){
-	mvaddch(row + BOARD_2_Y + 2, col * 2 + BOARD_2_X, '0');
+	mvaddch(row + BOARD_2_Y + 2, col * 2 + BOARD_2_X +2, '0');
 	refresh();
 }
 
