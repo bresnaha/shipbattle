@@ -213,7 +213,7 @@ bool initialize_board(player_t* player) {
   while (!time_out()) {
     sleep(1);
     if (player->has_new_message) {
-      ship_msg_t* message = read_next(player, sizeof(ship_msg_t));
+      player_msg_t* message = read_next(player, sizeof(player_msg_t));
 
       if (message != NULL) {
         ship_t ships[NUMBER_SHIPS];
@@ -241,7 +241,7 @@ bool parse_message(void* msg, bomb_t* bomb, ship_t* ships) {
 
   if (ships != NULL) {
     for (int j = 0; j < NUMBER_SHIPS; j++){
-      ship_msg_t* ships_msg = (ship_msg_t*) msg;
+      player_msg_t* ships_msg = (player_msg_t*) msg;
       ships[j].x = ships_msg[j][0];
       ships[j].y = ships_msg[j][1];
       ships[j].is_vertical =  ships_msg[j][2];
