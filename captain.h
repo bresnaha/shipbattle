@@ -22,8 +22,6 @@ typedef struct bomb {
     int game_over; // 0 - still playing -1 - lose +1 - win
 } bomb_t;
 
-
-
 /**
   * init_board:   Initialize a game board to all water '~'
   *
@@ -59,7 +57,7 @@ bomb_t prepare_bomb (captain_t* captain);
   * \param bomb   The bomb the opponent sent
   * \param board  The 2D char array game board
   */
-void update_your_board (bomb_t bomb, char board[BOARD_LENGTH][BOARD_HEIGHT]);
+void update_ship_board (bomb_t opp_bomb, char your_board[BOARD_LENGTH][BOARD_HEIGHT]);
 
 /**
   * update_guess_board Updates a captain's guesses to a game board
@@ -68,4 +66,4 @@ void update_your_board (bomb_t bomb, char board[BOARD_LENGTH][BOARD_HEIGHT]);
   * \param board  The 2D char array game board
   */
 
-void update_guess_board (bomb_t bomb, char board[BOARD_LENGTH][BOARD_HEIGHT]);
+void update_guess_board (bomb_t your_bomb, char guess_board[BOARD_LENGTH][BOARD_HEIGHT]);

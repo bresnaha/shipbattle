@@ -157,6 +157,7 @@ bomb_t prepare_bomb (captain_t* captain){
         // Request coordinates for bomb
         ui_add_message("System", "Send Bomb: <x-coordinate> <y-coordinate>");
         char* bomb_input = ui_read_input();
+        ui_add_message("System", bomb_input);
 
         pthread_mutex_lock(&lock);
         int x = (int)toupper(bomb_input[0]) - 65; // at least 0
@@ -181,23 +182,23 @@ bomb_t prepare_bomb (captain_t* captain){
     return new_bomb;
 }
 
-void update_your_board (bomb_t bomb, char board[BOARD_LENGTH][BOARD_HEIGHT]){
-    if(board[bomb.x][bomb.y] == '#'){ // hit
-        bomb.hit = true;
-        ui_hit(bomb.x, bomb.y, board);
+void update_ship_board (bomb_t opp_bomb, char your_board[BOARD_LENGTH][BOARD_HEIGHT]){
+    if(opp_bomb.hit){ // hit
+        your_board[opp_bomb.x][opp_bomb.y] = 'X';
+        ui_hit(opp_bomb.x, opp_bomb.y, your_board);
     } else { // miss
-        bomb.hit = false;
-        ui_miss(bomb.x, bomb.y, board);
+        your_board[opp_bomb.x][opp_bomb.y] = 'O';
+        ui_miss(opp_bomb.x, opp_bomb.y, your_board);
     }
 }
 
-void update_guess_board (bomb_t bomb, char board[BOARD_LENGTH][BOARD_HEIGHT]){
-    if(bomb.hit){ // if ship was hit
-        board[bomb.x][bomb.y] = 'X';
-        ui_hit_opp(bomb.x, bomb.y);
+void update_guess_board (bomb_t your_bomb, char guess_board[BOARD_LENGTH][BOARD_HEIGHT]){
+    if(your_bomb.hit){ // if ship was hit
+        guess_board[your_bomb.x][your_bomb.y] = 'X';
+        ui_hit_opp(your_bomb.x, your_bomb.y);
     } else { // miss
-        board[bomb.x][bomb.y] = 'O';
-        ui_miss_opp(bomb.x, bomb.y);
+        guess_board[your_bomb.x][your_bomb.y] = 'O';
+        ui_miss_opp(your_bomb.x, your_bomb.y);
     }
 }
 
@@ -275,9 +276,9 @@ int main(int argc, char** argv) {
     ui_init(your_name);
 
     // make your board and set ships on board
-    char your_board[BOARD_LENGTH][BOARD_HEIGHT];
-    init_board(your_board);
-    set_ships(&captain1, your_board); // set your captain's ships
+    char your_ships_board[BOARD_LENGTH][BOARD_HEIGHT];
+    init_board(your_ships_board);
+    set_ships(&captain1, your_ships_board); // set your captain's ships
 
     // send captain to server
     //write(server_socket, &captain1, sizeof(captain_t));
@@ -300,33 +301,32 @@ int main(int argc, char** argv) {
     while (still_playing){
         bomb_t your_bomb = prepare_bomb(&captain1); // prepare captain's bomb
         // send captain's bomb to server
-        write(server_socket, &your_bomb, sizeof(bomb_t));
+        //write(server_socket, &your_bomb, sizeof(bomb_t));
 
         // get coordinates from opponent's bomb
         bomb_t opp_bomb;
-        read(server_socket, &opp_bomb, sizeof(bomb_t));
-        read(server_socket, &your_bomb, sizeof(bomb_t));
+        //read(server_socket, &opp_bomb, sizeof(bomb_t));
+        //read(server_socket, &your_bomb, sizeof(bomb_t));
+        opp_bomb.x = 0;
+        opp_bomb.y = 1;
+        opp_bomb.hit = true;
 
         // update your captain's ships
-        update_your_board(opp_bomb, your_board);
+        update_ship_board(opp_bomb, your_ships_board);
         // update your own your guesses board
         update_guess_board(your_bomb, guess_board);
 
-        if(opp_bomb.game_over != 0){
-          still_playing = false;
-        }
         // check if game is over
-        /*
-        if(opp_bomb < -99999 || your_bomb < -99999){
-            still_playing = false;
-        }
-        */
-    }
-    if(opp_bomb.game_over == 1){
-      winner = your_name;
-    } else {
-      winner = opp_name;
-    }
+        if(opp_bomb.game_over == 1){
+          winner = your_name;
+          still_playing = false;
+        } else if (opp_bomb.game_over == -1){
+          winner = opp_name;
+          still_playing = false;
+        } // game over
+
+  } // while still playing
+
     // Display winner's username
     ui_add_message("System:", winner);
 
