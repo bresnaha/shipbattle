@@ -22,6 +22,10 @@
 #define BOARD_LENGTH 10
 #define BOARD_HEIGHT 10
 
+#define SLEEP_TIME /*2*/50000000L
+
+pthread_mutex_t ui_lock = PTHREAD_MUTEX_INITIALIZER;
+
 WINDOW* mainwin;
 WINDOW* shipwin;
 WINDOW* chatwin;
@@ -293,7 +297,7 @@ void ui_hit(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]){
   */
 	//hit animation
 	//do something pretty
-  ui_plane(col+1, row, board, true);
+  ui_plane(col, row, board, true);
 }
 
 void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hit){
@@ -307,66 +311,77 @@ void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hi
   int plane_col  = 20;
   int plane_row = row;
   while(plane_col > -14){
-  	
-    /*// if plane hasn't reached the bomb spot make sure that it shows the correct symbol 
-  	if(plane_col > col){
-  		if(hit){
-  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -1 + plane_col + 22 + BOARD_1_X,'#');
-  		} else {
-  			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, -1 + plane_col + 22 + BOARD_1_X,'~');
-  		}
-  	}*/
 
   	// add plane
   	// if for printing top wing
   	if((plane_row - 1) >= 0 && (plane_col + 1) >= 0 && (plane_col + 2) <=20){
   		//print the wing('/') at (col-1, row-1)
+      pthread_mutex_lock(&ui_lock);
   		mvaddch(-1 + plane_row + 2 + BOARD_1_Y, 2 + plane_col + BOARD_1_X,'/');
+      pthread_mutex_unlock(&ui_lock);
   	}
   	// dont let top wing leave trails
   	if((plane_row - 1) >= 0 && (plane_col + 3) >= 1 && (plane_col + 3) <=20){
   		//print the wing('/') at (col-1, row-1)
   		if (plane_col % 2) {
+        pthread_mutex_lock(&ui_lock);
   			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, 3 + plane_col + BOARD_1_X, board[repl_top][plane_row - 1]);
+        pthread_mutex_unlock(&ui_lock);
         repl_top--;
   		} else {
+        pthread_mutex_lock(&ui_lock);
   			mvaddch(-1 + plane_row + 2 + BOARD_1_Y, 3 + plane_col + BOARD_1_X,' ');
+        pthread_mutex_unlock(&ui_lock);
   		}
   		
   	}
   	// if for printing plane head 
   	if(plane_col >= 1 && plane_col <=20){
   		//print the head('<') at (col, row)
+      pthread_mutex_lock(&ui_lock);
   		mvaddch(plane_row + 2 + BOARD_1_Y, plane_col + BOARD_1_X,'<');
+      pthread_mutex_unlock(&ui_lock);
   	}
   	// if for printing plane body 1
   	if((plane_col+1) >= 1 && (plane_col+1) <=20){
   		//print the body('=') at (col-1, row)
+      pthread_mutex_lock(&ui_lock);
   		mvaddch(plane_row + 2 + BOARD_1_Y,1 + plane_col + BOARD_1_X,'=');
+      pthread_mutex_unlock(&ui_lock);
   	}
   	// if for printing plane body 2
   	if((plane_col+2) >= 1 && (plane_col+2) <=20){
   		//print the body('=') at (col-2, row)
+      pthread_mutex_lock(&ui_lock);
   		mvaddch(plane_row + 2 + BOARD_1_Y,2 + plane_col + BOARD_1_X,'=');
+      pthread_mutex_unlock(&ui_lock);
   	}
   	// if for printing plane body 3
   	if((plane_col+3) >= 1 && (plane_col+3) <=20){
   		//print the body('=') at (col-3, row)
+      pthread_mutex_lock(&ui_lock);
   		mvaddch(plane_row + 2 + BOARD_1_Y,3 + plane_col + BOARD_1_X,'=');
+      pthread_mutex_unlock(&ui_lock);
   	}
   	// if for printing plane tail
   	if((plane_col+4) >= 1 && (plane_col+4) <=20){
   		//print the tail('≤') at (col-4, row)
+      pthread_mutex_lock(&ui_lock);
   		mvaddch(plane_row + 2 + BOARD_1_Y,4 + plane_col + BOARD_1_X,ACS_LEQUAL);
+      pthread_mutex_unlock(&ui_lock);
   	}
   	// dont let plane body leave trails
   	if((plane_col + 5) >= 1 && (plane_col + 5) <=20){
   		//print the wing('/') at (col-1, row-1)
   		if (plane_col % 2) {
+        pthread_mutex_lock(&ui_lock);
   			mvaddch(plane_row + 2 + BOARD_1_Y, 5 + plane_col + BOARD_1_X, board[repl_mid][plane_row]);
+        pthread_mutex_unlock(&ui_lock);
         repl_mid--;
   		} else {
+        pthread_mutex_lock(&ui_lock);
   			mvaddch(plane_row + 2 + BOARD_1_Y, 5 + plane_col + BOARD_1_X,' ');
+        pthread_mutex_unlock(&ui_lock);
   		}
   		
   	}
@@ -374,16 +389,22 @@ void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hi
   	// if for printing bot wing
   	if((plane_row + 1) < 10 && (plane_col + 1) >= 0 && (plane_col + 2) <=20){
   		//print the wing('\') at (col+1, row+1)
+      pthread_mutex_lock(&ui_lock);
   		mvaddch(1 + plane_row + 2 + BOARD_1_Y,2 + plane_col + BOARD_1_X,'\\');
+      pthread_mutex_unlock(&ui_lock);
   	}
   	// dont bot wing leave trails
   	if((plane_row + 1) < 10 && (plane_col + 3) >= 1 && (plane_col + 3) <=20){
   		//print the wing('/') at (col+1, row-1)
   		if (plane_col % 2) {
+        pthread_mutex_lock(&ui_lock);
   			mvaddch(1 + plane_row + 2 + BOARD_1_Y, 3 + plane_col + BOARD_1_X, board[repl_bot][plane_row + 1]);
+        pthread_mutex_unlock(&ui_lock);
         repl_bot--;
   		} else {
+        pthread_mutex_lock(&ui_lock);
   			mvaddch(1 + plane_row + 2 + BOARD_1_Y, 3 + plane_col + BOARD_1_X,' ');
+        pthread_mutex_unlock(&ui_lock);
   		}
   		
   	}
@@ -403,7 +424,7 @@ void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hi
   	}
   }
   	refresh();
-  	nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  	nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
   	plane_col--;
   }
   if(pthread_join(bomb_thread, NULL)) {
@@ -418,17 +439,30 @@ void* ui_hit_bomb(void* arg){
   int col = hit_location->col + 1;
   int row = hit_location->row;
   free(arg);
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '*');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '.');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2+ BOARD_1_X, '@');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '%');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '&');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, 'X');
+  pthread_mutex_unlock(&ui_lock);
+  refresh();
   return NULL;
 }
 
@@ -437,17 +471,30 @@ void* ui_miss_bomb(void* arg){
   int col = hit_location->col;
   int row = hit_location->row;
   free(arg);
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '*');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '.');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '@');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, 'W');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, 'w');
-  nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);// sleep for half a second
+  pthread_mutex_unlock(&ui_lock);
+  nanosleep((const struct timespec[]){{0, SLEEP_TIME}}, NULL);// sleep for half a second
+  pthread_mutex_lock(&ui_lock);
   mvaddch(row + BOARD_1_Y + 2, col * 2 + BOARD_1_X, '~');
+  pthread_mutex_unlock(&ui_lock);
+  refresh();
   return NULL;
 }
 
