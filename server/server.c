@@ -56,7 +56,8 @@ int main(int args, char** argv){
 */
 
 void* thread_moderate_match(void* args) {
-  // create all required threads
+
+  // create required(listener) threads
   pthread_create(&player_1_listener, NULL, thread_player_listener, &player1);
   pthread_create(&player_2_listener, NULL, thread_player_listener, &player2);
 
@@ -67,8 +68,8 @@ void* thread_moderate_match(void* args) {
   // wait for board setup from both players
   while (!player_1_initialized || !player_2_initialized){
     if (player_1_initialized)
-      player_2_initialized = initialize_board(player2);
-    else player_1_initialized = initialize_board(player1);
+      player_2_initialized = initialize_board(&player2);
+    else player_1_initialized = initialize_board(&player1);
   }
 
   // begin turns and bomb-dropping
@@ -204,21 +205,20 @@ void initialize_player(player_t* player, char* username, int socket, char* ip_ad
 }
 
 
-bool initialize_board(player_t player) {
-  set_expire_time(WAIT_INIT); // set expiration
+bool initialize_board(player_t* player) {
+  set_expire_time(WAIT_INIT);
 
   while (!time_out()) {
     sleep(1);
-
-    if (player.has_new_message) {
-      char* message = read_next(player);
+    if (player->has_new_message) {
+      ships_msg_t* message = read_next(player, sizeof(ships_msg_t));
 
       if (message != NULL) {
         ship_t ships[NUMBER_SHIPS];
         parse_message(message, NULL, ships);
 
-        if (is_valid_move(player, NULL, ships)) {
-          put_ships(&player, ships);
+        if (is_valid_move(NULL, ships)) {
+          put_ships(player, ships);
           return true;
         }
       }
@@ -228,27 +228,26 @@ bool initialize_board(player_t player) {
 }
 
 
-bool parse_message(char* message, bomb_t* bomb, ship_t* ships) {
-  // TODO: error checking to not overrun message
-  // TODO: check for valid user-name
-  int offset = USERNAME_LENGTH + PADDING_LENGTH;
-  int i = offset;
-
+bool parse_message(void* msg, bomb_t* bomb, ship_t* ships) {
   if (bomb != NULL) {// dealing with a bomb
-    // TODO: parse char to int
-    bomb->x = message[i++];
-    bomb->y = message[i];
+    bomb_msg_t* bomb_msg = (bomb_msg_t*) msg;
+    bomb->x = bomb_msg->x;
+    bomb->y = bomb_msg->y;
     return true;
 
   } // parse ship
-  for (int j = 0; j < NUMBER_SHIPS; j++){
-    ships[j].x = extract_int(message, i++, 1);
-    ships[j].y = extract_int(message, i++, 1);
-    ships[j].is_vertical = (message[i++] == 'v')? 1 : 0;
-    ships[j++].size = extract_int(message, i++, 1);
-    i++;
+
+  if (ships != NULL) {
+    for (int j = 0; j < NUMBER_SHIPS; j++){
+      ships_msg_t* ships_msg = (ships_msg_t*) msg;
+      ships[j].x = ships_msg[j][0];
+      ships[j].y = ships_msg[j][1];
+      ships[j].is_vertical =  ships_msg[j][2];
+      ships[j].size = ships_msg[j][3];
+    }
+    return true;
   }
-  return true;
+  return false;
 }
 
 
@@ -267,7 +266,7 @@ char* take_turn(player_t player) {
         bomb_t bomb;
         parse_message(message, &bomb, NULL);
 
-        if (is_valid_move(player, &bomb, NULL)) {
+        if (is_valid_move(&bomb, NULL)) {
           put_bomb(&player, &bomb);
           return message;
 
@@ -287,7 +286,7 @@ char* take_turn(player_t player) {
   return message;
 }
 
-bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[NUMBER_SHIPS]) {
+bool is_valid_move(bomb_t* bomb, ship_t ships[NUMBER_SHIPS]) {
   // bomb check
   if (bomb != NULL)
     return bomb->x < BOARD_SIZE && bomb->y < BOARD_SIZE;

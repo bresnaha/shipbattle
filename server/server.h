@@ -16,7 +16,7 @@
 #define NUMBER_SHIPS 5
 
 //  WAITING TIME
-#define WAIT_INIT 30
+#define WAIT_INIT 500
 #define WAIT_TURN 15
 
 //  ARRAY REPRESENTATIONS
@@ -32,6 +32,10 @@
 
 typedef struct player_msg {
   char* username;
+  //
+  //
+  // 1 indicates vertical
+  //
   int ships[NUMBER_SHIPS][4];
 } player_msg_t;
 
@@ -82,7 +86,7 @@ void initialize_player(player_t* player, char* username, int socket, char* ip_ad
    populate user's game board; checks if move is valid, and times out on user
     return: true if player has successfully been initialized
  */
-bool initialize_board(player_t player);
+bool initialize_board(player_t* player);
 
 
 int extract_int (char* message, int index, int length);
@@ -92,7 +96,7 @@ int extract_int (char* message, int index, int length);
    type has to be sizeof(ships[NUMBER_SHIPS]) or sizeof(bomb_t)!
     return: a boolean, whether move is a bomb == 1 (or ship == 0)
  */
-bool parse_message(char* message, bomb_t* bomb, ship_t* ships);
+bool parse_message(void* message, bomb_t* bomb, ship_t* ships);
 
 /*
    manages turn-taking for the specified player
@@ -105,7 +109,7 @@ char* take_turn(player_t player);
     always take a user, and a bomb OR a ship struct at a time
     return: a boolean, whether a move is valid
  */
-bool is_valid_move(player_t player, bomb_t* bomb, ship_t ships[]);
+bool is_valid_move(bomb_t* bomb, ship_t ships[]);
 
 /*
    put a ship onto a player's board
@@ -151,7 +155,7 @@ void connection_listener(player_t *player);
 
 //    LISTENER/WRITER FUNCTIONS
 
-char* read_next(player_t player);
+char* read_next(player_t* player, size_t size);
 
 
 /*
