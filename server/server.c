@@ -132,10 +132,10 @@ bool write_to_socket(player_t* player, char* message, size_t size) {
 
 
 void* read_next(player_t* player, size_t size) {
-  pthread_mutex_lock(&player.lock);
-  char* message = strndup(player.incoming_message, size);
-  player.has_new_message = false;
-  pthread_mutex_unlock(&player.lock);
+  pthread_mutex_lock(player->lock);
+  char* message = strndup(player->incoming_message, size);
+  player->has_new_message = false;
+  pthread_mutex_unlock(player->lock);
   return message;
 }
 
@@ -179,7 +179,7 @@ void connection_listener(player_t* player) {
       continue;
 
     // TODO: handle read_next
-    initialize_player(player, strndup(read_next(player, sizeof()), USERNAME_LENGTH), socket, NULL);
+    initialize_player(player, strndup(read_next(player, sizeof(player_msg_t)), USERNAME_LENGTH), socket, NULL);
   }
 }
 
@@ -213,7 +213,7 @@ bool initialize_board(player_t* player) {
   while (!time_out()) {
     sleep(1);
     if (player->has_new_message) {
-      ships_msg_t* message = read_next(player, sizeof(ships_msg_t));
+      ship_msg_t* message = read_next(player, sizeof(ship_msg_t));
 
       if (message != NULL) {
         ship_t ships[NUMBER_SHIPS];
@@ -241,7 +241,7 @@ bool parse_message(void* msg, bomb_t* bomb, ship_t* ships) {
 
   if (ships != NULL) {
     for (int j = 0; j < NUMBER_SHIPS; j++){
-      ships_msg_t* ships_msg = (ships_msg_t*) msg;
+      ship_msg_t* ships_msg = (ship_msg_t*) msg;
       ships[j].x = ships_msg[j][0];
       ships[j].y = ships_msg[j][1];
       ships[j].is_vertical =  ships_msg[j][2];
