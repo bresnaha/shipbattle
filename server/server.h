@@ -102,7 +102,7 @@ bool parse_message(void* message, bomb_t* bomb, ship_t* ships);
    manages turn-taking for the specified player
     return: none
 */
-char* take_turn(player_t player);
+bomb_msg_t* take_turn(player_t* player);
 
 /*
    validates a move
@@ -155,7 +155,7 @@ void connection_listener(player_t *player);
 
 //    LISTENER/WRITER FUNCTIONS
 
-char* read_next(player_t* player, size_t size);
+void* read_next(player_t* player, size_t size);
 
 
 /*
@@ -163,7 +163,7 @@ char* read_next(player_t* player, size_t size);
     returns: a bool, whether the message wrote successfully
     *false reutrn value probably means connection failed
  */
-bool write_to_socket(player_t player, char* message, int length);
+bool write_to_socket(player_t* player, char* message, size_t size);
 
 
 

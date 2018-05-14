@@ -74,26 +74,27 @@ void* thread_moderate_match(void* args) {
 
   // begin turns and bomb-dropping
   int exit_state;
-  char* message;
+  bomb_msg_t* message;
   bool player_1_turn = true;
 
   // check for exit state before next player's turn
   while (!(exit_state = game_over(player1))) { // checks if player1 still has a turn from !losing
-    write_to_socket(player1, message, SHIP_MESSAGE_LENGTH);
+    write_to_socket(player1, message, sizeof(bomb_msg_t));
+    // MEMORY: free(message);
     message = take_turn(player1);
     player_1_turn = !player_1_turn;
 
     // check for exit state before next player's turn
     if (!(exit_state = game_over(player2))) // checks if player2 still has a turn from !losing
       break;
-    write_to_socket(player2, message, SHIP_MESSAGE_LENGTH);
+    write_to_socket(player2, message, sizeof(bomb_msg_t));
+    // MEMORY: free(message);
     message = take_turn(player2);
   }
 
-  // send username of winner
-  message = player_1_turn? player2.username : player1.username;
-  write_to_socket(player1, message, SHIP_MESSAGE_LENGTH);
-  write_to_socket(player2, message, SHIP_MESSAGE_LENGTH);
+  // TODO: prepare winner message to players
+  write_to_socket(player1, message, sizeof(bomb_msg_t));
+  write_to_socket(player2, message, sizeof(bomb_msg_t));
 
   free(message);
 
@@ -123,16 +124,16 @@ void* thread_player_listener(void* args) {
 }
 
 
-bool write_to_socket(player_t player, char* message, int length) {
-  if (write(player.socket, message, sizeof(char)*length) == -1)
+bool write_to_socket(player_t* player, char* message, size_t size) {
+  if (write(player->socket, message, size) == -1)
     return false;
   return true;
 }
 
 
-char* read_next(player_t player) {
+void* read_next(player_t* player, size_t size) {
   pthread_mutex_lock(&player.lock);
-  char* message = strndup(player.incoming_message, SHIP_MESSAGE_LENGTH);
+  char* message = strndup(player.incoming_message, size);
   player.has_new_message = false;
   pthread_mutex_unlock(&player.lock);
   return message;
@@ -177,7 +178,8 @@ void connection_listener(player_t* player) {
     if(socket == -1)  // error checking
       continue;
 
-    initialize_player(player, strndup(read_next(*player), USERNAME_LENGTH), socket, NULL);
+    // TODO: handle read_next
+    initialize_player(player, strndup(read_next(player, sizeof()), USERNAME_LENGTH), socket, NULL);
   }
 }
 
@@ -251,27 +253,28 @@ bool parse_message(void* msg, bomb_t* bomb, ship_t* ships) {
 }
 
 
-char* take_turn(player_t player) {
-  char* message = (char*) malloc(sizeof(char)*SHIP_MESSAGE_LENGTH);
+bomb_msg_t* take_turn(player_t* player) {
+  bomb_msg_t* msg = malloc(sizeof(bomb_msg_t));
   set_expire_time(WAIT_TURN);
   // wait for player to take turn
   while (!time_out()) {
     sleep(1);
-    if (player.has_new_message) {
+    if (player->has_new_message) {
       // get new message
-      strncpy(message, read_next(player), SHIP_MESSAGE_LENGTH);
+      strncpy(message, read_next(player, sizeof(bomb_msg_t)), sizeof(bomb_msg_t));
 
       // parse message into a do-able action
-      if (message != NULL){
+      if (msg != NULL){
         bomb_t bomb;
-        parse_message(message, &bomb, NULL);
+        parse_message((void*)msg, &bomb, NULL);
 
         if (is_valid_move(&bomb, NULL)) {
-          put_bomb(&player, &bomb);
-          return message;
+          put_bomb(player, &bomb);
+          return msg;
 
-        } else
-          write_to_socket(player, "SYSTEM   INV_MOVE", SHIP_MESSAGE_LENGTH);
+        } else {
+          // TODO: write error message to socket
+        }
       }
     }
   }
