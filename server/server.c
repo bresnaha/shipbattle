@@ -61,6 +61,8 @@ void assign_username_to_struct(char* username, bomb_msg_t* msg) {
   msg->username[USERNAME_LENGTH] = '\0';
 } 
 
+void debug(char* message) { printf("  DEBUG: %s\n", message); }
+
 /*
       Thread functions
 */
@@ -70,6 +72,7 @@ void* thread_moderate_match(void* args) {
   // create required(listener) threads
   pthread_create(&player_1_listener, NULL, thread_player_listener, &player1);
   pthread_create(&player_2_listener, NULL, thread_player_listener, &player2);
+  debug("player_1 & player_2 listeners created");
 
   // wait for board setup from both players
   while (!player1.initialized || !player2.initialized){
@@ -77,10 +80,11 @@ void* thread_moderate_match(void* args) {
       player2.initialized = initialize_board(&player2);
     else player1.initialized = initialize_board(&player1);
   }
-  
-  // TODO: CONNECTION write initialized message
+  debug("player_1 & player_2 initialized");
+    
   write_opponents_name(&player1, player2.username);
   write_opponents_name(&player2, player1.username);
+  debug("wrote out opponent's name");
 
   // begin turns and bomb-dropping
   int exit_state;
@@ -91,16 +95,20 @@ void* thread_moderate_match(void* args) {
 
   // check for exit state before next player's turn
   while (!(exit_state = game_over(player1))) { // checks if player1 still has a turn from !losing
-    write_to_socket(&player1, (void*)message, sizeof(bomb_msg_t));
+    
+    write_to_socket(&player1, (void*)message, sizeof(bomb_msg_t)); // writes once to player 1 to report their loss
+    write_to_socket(&player2, (void*)message, sizeof(bomb_msg_t)); // writes once to player 2 to report result 
+    
     // MEMORY: free(message);
     message = take_turn(&player1);
+    debug("player_1 took a turn");
     
     player_1_turn = !player_1_turn;
 
     // check for exit state before next player's turn
     if (!(exit_state = game_over(player2))) // checks if player2 still has a turn from !losing
       break;
-      
+    write_to_socket(&player1, (void*)message, sizeof(bomb_msg_t));
     write_to_socket(&player2, (void*)message, sizeof(bomb_msg_t));
     // MEMORY: free(message);
     message = take_turn(&player2);
@@ -162,7 +170,7 @@ bool write_to_socket(player_t* player, void* message, size_t size) {
   return true;
 }
 
-/* DEPRECATED */
+
 void* read_next(player_t* player, size_t size) {
   pthread_mutex_lock(&player->lock);
   char* message = strndup(player->incoming_message, size);
@@ -282,6 +290,7 @@ bomb_msg_t* take_turn(player_t* player) {
   bomb_msg_t* bomb_msg = malloc(sizeof(bomb_msg_t));
   set_expire_time(WAIT_TURN);
   assign_username_to_struct(player->username, bomb_msg);
+  bomb_msg->game_over = 0;
   
   // wait for player to take turn
   while (!time_out()) {
