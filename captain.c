@@ -91,7 +91,6 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
       // check if input is valid
       if(!((x > -1) && (y > -1) && (orientation != -1))) {
         ui_add_message("System", "Invalid input, try again");
-        continue; // what does this do? or continue?
       } else {
         if (orientation == 0 && ((x + length -1) < BOARD_LENGTH)) { // horizontal and within bounds
           for(int i = x; i < x + length; i++){
@@ -142,10 +141,10 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
         } else {
           ui_add_message("System", "Ship is out of bounds, try again");
         }
-        pthread_mutex_unlock(&lock);
-        free(ship_input);
         //display_ships(board);
       } // else valid input
+      pthread_mutex_unlock(&lock);
+      free(ship_input);
     } // while not valid
   } // for every ship
 } // set ships
@@ -238,6 +237,15 @@ int main(int argc, char** argv) {
       perror("bind");
       exit(2);
     }
+
+    // Become a server Socket
+    listen(s,2);
+
+    // Get the listening socket info so we can find out which port we're using
+    socklen_t addr_size = sizeof(struct sockaddr_in);
+    getsockname(s, (struct sockaddr *) &addr, &addr_size);
+
+    int local_port = ntohs(addr.sin_port);
     */
     // get player's name
     char* your_full = NULL;
@@ -304,12 +312,18 @@ int main(int argc, char** argv) {
         update_guess_board(your_bomb, guess_board);
 
         // check if game is over
+        /*
+        if(opp_bomb < -99999 || your_bomb < -99999){
+            still_playing = false;
+        }
+        */
     }
 
     // Display winner's username
     ui_add_message("System:", winner);
 
     // Clean up
+    ui_shutdown();
     //close(server_socket);
 
     return 0;
