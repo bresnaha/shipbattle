@@ -11,7 +11,7 @@
 // TODO: write to client with its own username indicating failed initialization
 
 // TODO: send opponent's ships during initialization
-
+// TODO: On line 400 of server.c make the if statement mark as true if the value is SHIP_PRESNET OR BOMB_PRESENT
 
 
 // Mechanics
