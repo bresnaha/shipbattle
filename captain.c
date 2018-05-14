@@ -32,7 +32,6 @@ void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]) {
     }
     printf(" \n");
     for (int y = 0; y < BOARD_HEIGHT; y++){
-
         for(int x = 0; x < BOARD_LENGTH; x++){
             if(x == 0)
                 printf("%d ", y);
@@ -41,7 +40,6 @@ void display_ships (char board[BOARD_LENGTH][BOARD_HEIGHT]) {
         printf("\n");
     }
     printf("\n");
-
 }
 
 
@@ -53,7 +51,6 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
   ui_add_message("System", "<y-start>: starting y position (0 - 9)");
   ui_add_message("System", "<orientation>: orientation of ship (horiz -> 'h' or vert -> 'v')");
 
-  //display_ships(board);
   int ship_lengths[NUM_SHIPS] = {2, 3, 3, 4, 5}; // int array of lengths of ships
   bool valid; // ship placement is at a valid location
 
@@ -61,11 +58,13 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
     valid = false; // initially ship placement is not valid
     while (!valid) { // while ship has not been place in a valid location
       int length = ship_lengths[s];
-      // Request location and orientation of a ship
-      char* add_ship = "Ship of length  : <x-start> <y-start> <orientation>"; // TODO: FIX length
-      //add_ship[15] = length;
+
+      // Request location and orientation of a ship of specified
+      char add_ship[52];
+      sprintf(add_ship, "Ship of length %d: <x-start> <y-start> <orientation>", length);
       ui_add_message("System", add_ship);
 
+      // read user input from ui
       char* ship_input = ui_read_input();
       pthread_mutex_lock(&lock);
 
@@ -73,6 +72,7 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
       int y = atoi(&ship_input[2]);  // at least 0
       char char_orient = toupper(ship_input[4]); // H or V
 
+      // set orientation
       int orientation;
       if(char_orient == 'H'){
         orientation = 0; // horizontal
@@ -187,7 +187,6 @@ void update_ship_board (bomb_t opp_bomb, char your_board[BOARD_LENGTH][BOARD_HEI
         your_board[opp_bomb.x][opp_bomb.y] = 'X';
         ui_hit(opp_bomb.x, opp_bomb.y, your_board);
     } else { // miss
-        your_board[opp_bomb.x][opp_bomb.y] = 'O';
         ui_miss(opp_bomb.x, opp_bomb.y, your_board);
     }
 }
@@ -207,7 +206,7 @@ int main(int argc, char** argv) {
     /********************************
     * Parse command line arguments *
     ********************************/
-    /* (from distributed systems lab with David)
+    // (from distributed systems lab with David)
     if(argc != 4) {
       fprintf(stderr, "Usage: %s <server address> <server port>\n", argv[0]);
       exit(EXIT_FAILURE);
@@ -215,39 +214,39 @@ int main(int argc, char** argv) {
 
     char* server_address = argv[1];
     int server_port = atoi(argv[2]);
-    */
+
     /**********************************
     * Set-up listening client server  *
     ***********************************/
-    /* Set up a socket (from distributed systems lab)
+    //Set up a socket (from distributed systems lab)
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if(server_socket == -1) {
       perror("Socket");
       exit(2);
     }
-    */
-    /* Listen at this address. We'll bind to port 0 to accept any available port
+
+    // Listen at this address. We'll bind to port 0 to accept any available port
     struct sockaddr_in addr = {
       .sin_addr.s_addr = INADDR_ANY,
       .sin_family = AF_INET,
       .sin_port = htons(0)
     };
 
-        // Bind to the specified address
+    // Bind to the specified address
     if(bind(server_socket, (struct sockaddr*)&addr, sizeof(struct sockaddr_in))) {
       perror("bind");
       exit(2);
     }
 
     // Become a server Socket
-    listen(s,2);
+    listen(server_socket,2);
 
     // Get the listening socket info so we can find out which port we're using
     socklen_t addr_size = sizeof(struct sockaddr_in);
-    getsockname(s, (struct sockaddr *) &addr, &addr_size);
+    getsockname(server_socket, (struct sockaddr *) &addr, &addr_size);
 
     int local_port = ntohs(addr.sin_port);
-    */
+
     // get player's name
     char* your_full = NULL;
     size_t linecap = 0;
@@ -262,7 +261,7 @@ int main(int argc, char** argv) {
     for(int i = 0; i < USERNAME_LENGTH+1; i++){
       if(your_name[i] == '\n')
         your_name[i] = ' ';
-      else if (your_name[i] == '\0') // TODO: fix padding for username
+      else if (your_name[i] == '\0')
         your_name[i] = ' ';
     }
     your_name[8] = '\0';
@@ -281,13 +280,12 @@ int main(int argc, char** argv) {
     set_ships(&captain1, your_ships_board); // set your captain's ships
 
     // send captain to server
-    //write(server_socket, &captain1, sizeof(captain_t));
+    write(server_socket, &captain1, sizeof(captain_t));
 
     // get opponent's name
     captain_t opponent;
     char* opp_name;
-    //TODO: thread
-    //read(server_socket, &opp_name, sizeof(char)*8);
+    read(server_socket, &opp_name, sizeof(char)*8);
     ui_set_opp_name(opp_name);
     opponent.username = opp_name;
 
@@ -301,15 +299,21 @@ int main(int argc, char** argv) {
     while (still_playing){
         bomb_t your_bomb = prepare_bomb(&captain1); // prepare captain's bomb
         // send captain's bomb to server
-        //write(server_socket, &your_bomb, sizeof(bomb_t));
+        write(server_socket, &your_bomb, sizeof(bomb_t));
 
         // get coordinates from opponent's bomb
         bomb_t opp_bomb;
-        //read(server_socket, &opp_bomb, sizeof(bomb_t));
-        //read(server_socket, &your_bomb, sizeof(bomb_t));
-        opp_bomb.x = 0;
+        read(server_socket, &opp_bomb, sizeof(bomb_t));
+        // update your bomb from server
+        read(server_socket, &your_bomb, sizeof(bomb_t));
+
+        //testing
+        /*opp_bomb.x = 0;
         opp_bomb.y = 1;
         opp_bomb.hit = true;
+        your_bomb.hit = true;
+        update_ship_board(your_bomb, your_ships_board);
+        */
 
         // update your captain's ships
         update_ship_board(opp_bomb, your_ships_board);
@@ -332,7 +336,7 @@ int main(int argc, char** argv) {
 
     // Clean up
     ui_shutdown();
-    //close(server_socket);
+    close(server_socket);
 
     return 0;
 }
