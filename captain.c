@@ -82,10 +82,6 @@ void set_ships(captain_t* captain, char board[BOARD_LENGTH][BOARD_HEIGHT]) {
         orientation = -1; // invalid
       }
 
-      /* add_ship = "Ship: x-start = " + ship_input[0] +
-        ", y-start = " + ship_input[2] +
-        ", orientation = " + ship_input[4];
-      */
       ui_add_message(captain->username, ship_input);
 
       // check if input is valid
@@ -170,7 +166,7 @@ bomb_t prepare_bomb (captain_t* captain){
         if(!((x > -1) && (y > -1) && (x < BOARD_LENGTH) && (y < BOARD_HEIGHT))) {
           ui_add_message("System", "Bomb not within bounds, try again");
         } else {
-            new_bomb.cap_username = captain->username;
+            strcpy(new_bomb.cap_username, captain->username); // new_bomb.cap_username = captain->username;
             new_bomb.x = x;
             new_bomb.y = y;
             ui_add_message("System", "Bomb ready for deployment");
@@ -185,8 +181,10 @@ bomb_t prepare_bomb (captain_t* captain){
 void update_ship_board (bomb_t opp_bomb, char your_board[BOARD_LENGTH][BOARD_HEIGHT]){
     if(opp_bomb.hit){ // hit
         your_board[opp_bomb.x][opp_bomb.y] = 'X';
+        ui_add_message("System", "You've been HIT!");
         ui_hit(opp_bomb.x, opp_bomb.y, your_board);
     } else { // miss
+        ui_add_message("System", "They MISSED!");
         ui_miss(opp_bomb.x, opp_bomb.y, your_board);
     }
 }
@@ -194,9 +192,11 @@ void update_ship_board (bomb_t opp_bomb, char your_board[BOARD_LENGTH][BOARD_HEI
 void update_guess_board (bomb_t your_bomb, char guess_board[BOARD_LENGTH][BOARD_HEIGHT]){
     if(your_bomb.hit){ // if ship was hit
         guess_board[your_bomb.x][your_bomb.y] = 'X';
+        ui_add_message("System", "You HIT a ship!");
         ui_hit_opp(your_bomb.x, your_bomb.y);
     } else { // miss
         guess_board[your_bomb.x][your_bomb.y] = 'O';
+        ui_add_message("System", "You MISSED!");
         ui_miss_opp(your_bomb.x, your_bomb.y);
     }
 }
@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
     * Parse command line arguments *
     ********************************/
     // (from distributed systems lab with David)
-    if(argc != 4) {
+    if(argc != 3) {
       fprintf(stderr, "Usage: %s <server address> <server port>\n", argv[0]);
       exit(EXIT_FAILURE);
     }
@@ -258,6 +258,7 @@ int main(int argc, char** argv) {
     strncpy(your_name, your_full, USERNAME_LENGTH);
     your_name[USERNAME_LENGTH] = 0;
 
+    // Padding for username
     for(int i = 0; i < USERNAME_LENGTH+1; i++){
       if(your_name[i] == '\n')
         your_name[i] = ' ';
@@ -268,7 +269,7 @@ int main(int argc, char** argv) {
 
     // make your captain
     captain_t captain1;
-    captain1.username = your_name; // cap length 8
+    strcpy(captain1.username, your_name); //captain1.username = your_name;
     printf("Hello, Captain %s\n", captain1.username);
 
     // initialize the ui
@@ -282,12 +283,16 @@ int main(int argc, char** argv) {
     // send captain to server
     write(server_socket, &captain1, sizeof(captain_t));
 
+    ui_add_message("System", "Waiting for other player");
     // get opponent's name
     captain_t opponent;
-    char* opp_name;
-    read(server_socket, &opp_name, sizeof(char)*8);
-    ui_set_opp_name(opp_name);
-    opponent.username = opp_name;
+    //char* opp_name;
+    int bytes_read = read(server_socket, &opponent, sizeof(captain_t));
+    while(bytes_read < 0) {
+        bytes_read = read(server_socket, &opponent, sizeof(captain_t));
+    }
+    ui_set_opp_name(opponent.username);
+    //opponent.username = opp_name;
 
     // initialize opponent's board
     char guess_board[BOARD_LENGTH][BOARD_HEIGHT];
@@ -295,40 +300,52 @@ int main(int argc, char** argv) {
 
     //while game not done
     char* winner; // username of winner
-    bool still_playing = true;
-    while (still_playing){
+    //bool still_playing = true;
+    int turns = 0;
+    while (turns > -1){
+        char display_turn[11]; // up to 100 turns
+        sprintf(display_turn, "Round %d!", turns);
+        ui_add_message("System", display_turn);
+
         bomb_t your_bomb = prepare_bomb(&captain1); // prepare captain's bomb
         // send captain's bomb to server
         write(server_socket, &your_bomb, sizeof(bomb_t));
 
-        // get coordinates from opponent's bomb
+        // get coordinates of opponent's bomb and if hit from server
         bomb_t opp_bomb;
-        read(server_socket, &opp_bomb, sizeof(bomb_t));
-        // update your bomb from server
-        read(server_socket, &your_bomb, sizeof(bomb_t));
+        bytes_read = read(server_socket, &opp_bomb, sizeof(bomb_t));
+        if(bytes_read < 0) {
+            ui_add_message("Sytem", "Read failed for opponent's bomb");
+            exit(2); // what to do
+        }
 
-        //testing
-        /*opp_bomb.x = 0;
-        opp_bomb.y = 1;
-        opp_bomb.hit = true;
-        your_bomb.hit = true;
-        update_ship_board(your_bomb, your_ships_board);
-        */
+        // update your bomb from server (hit or miss)
+        bytes_read = read(server_socket, &your_bomb, sizeof(bomb_t));
+        if(bytes_read < 0) {
+            ui_add_message("Sytem", "Read failed for your bomb");
+            exit(2); // what to do
+        }
+
+        // wait until both read
 
         // update your captain's ships
+        ui_add_message("System", "Incoming!");
         update_ship_board(opp_bomb, your_ships_board);
         // update your own your guesses board
+        ui_add_message("System", "Fire!");
         update_guess_board(your_bomb, guess_board);
 
         // check if game is over
         if(opp_bomb.game_over == 1){
-          winner = your_name;
-          still_playing = false;
+          winner = captain1.username;
+          turns = -1;
+          //still_playing = false;
         } else if (opp_bomb.game_over == -1){
-          winner = opp_name;
-          still_playing = false;
+          winner = opponent.username;
+          turns = -1;
+          //still_playing = false;
         } // game over
-
+        turns++;
   } // while still playing
 
     // Display winner's username

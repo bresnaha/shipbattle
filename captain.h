@@ -10,12 +10,12 @@
 #define USERNAME_LENGTH 8
 
 typedef struct captain {
-    char* username;
+    char username[USERNAME_LENGTH+1];
     int send_ships[NUM_SHIPS][4];
 } captain_t;
 
 typedef struct bomb {
-    char* cap_username;
+    char cap_username[USERNAME_LENGTH+1];
     int x;
     int y;
     bool hit;
