@@ -90,6 +90,7 @@ void* thread_moderate_match(void* args) {
   int exit_state;
   bomb_msg_t* message;
   message = take_turn(&player2);
+  debug("player_2 took a turn");
   
   bool player_1_turn = true;
 
@@ -112,6 +113,7 @@ void* thread_moderate_match(void* args) {
     write_to_socket(&player2, (void*)message, sizeof(bomb_msg_t));
     // MEMORY: free(message);
     message = take_turn(&player2);
+    debug("player_2 took a turn");
   }
 
   // TODO: prepare winner message to players
