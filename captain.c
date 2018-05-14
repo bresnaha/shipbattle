@@ -292,24 +292,33 @@ int main(int argc, char** argv) {
     while (still_playing){
         bomb_t your_bomb = prepare_bomb(&captain1); // prepare captain's bomb
         // send captain's bomb to server
-        //write(server_socket, &your_bomb, sizeof(bomb_t));
+        write(server_socket, &your_bomb, sizeof(bomb_t));
 
         // get coordinates from opponent's bomb
         bomb_t opp_bomb;
-        //read(server_socket, &opp_bomb, sizeof(bomb_t));
+        read(server_socket, &opp_bomb, sizeof(bomb_t));
+        read(server_socket, &your_bomb, sizeof(bomb_t));
 
         // update your captain's ships
         update_your_board(opp_bomb, your_board);
         // update your own your guesses board
         update_guess_board(your_bomb, guess_board);
 
+        if(opp_bomb.game_over != 0){
+          still_playing = false;
+        }
         // check if game is over
     }
-
+    if(opp_bomb.game_over == 1){
+      winner = your_name;
+    } else {
+      winner = opp_name;
+    }
     // Display winner's username
     ui_add_message("System:", winner);
 
     // Clean up
+    ui_shutdown();
     //close(server_socket);
 
     return 0;
