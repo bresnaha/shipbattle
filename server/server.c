@@ -36,8 +36,8 @@ void make_lobby() {
   listener_socket = open_connection_listener();
   debug("connection listener opened");
   
-  player1->live = false;
-  player2->live = false;
+  player1.live = false;
+  player2.live = false;
     
   connection_listener(&player1);
   connection_listener(&player2);
@@ -83,6 +83,8 @@ void* thread_moderate_match(void* args) {
 
   // wait for board setup from both players
   while (!player1.initialized || !player2.initialized){
+    sleep(1);
+    debug("initializing player1 and player2");
     if (player1.initialized)
       player2.initialized = initialize_board(&player2);
     else player1.initialized = initialize_board(&player1);
@@ -135,12 +137,11 @@ void* thread_moderate_match(void* args) {
 
 
 void* thread_player_listener(void* args) {
-  // TODO: some major work needs to be done here
+  
   player_t* player = (player_t*) args;
   
   while (player->live) {
     sleep(1);
-    
     // don't read from socket if existing buffer hasn't been read; buffer overrwrite
     if (!player->has_new_message) {
       pthread_mutex_lock(&player->lock);
@@ -225,12 +226,17 @@ void connection_listener(player_t* player) {
 
     struct sockaddr_in client_addr;
     socklen_t client_addr_length = sizeof(struct sockaddr_in);
+    
+    debug("heard connection on port");
 
     int socket = accept(listener_socket, (struct sockaddr*)&client_addr, &client_addr_length);
+    
+    debug("accepted connection on port");
+    
     if(socket == -1)  // error checking
       continue;
       
-    debug("accepted connection on port");
+    debug("successful connection acceptance on port");
 
     // INITIALIZE PLAYER STRUCT
     // initialize fields
