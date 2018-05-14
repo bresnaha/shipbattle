@@ -28,10 +28,16 @@ pthread_t player_2_listener;
    two users are waiting simultaneously
  */
 
+void debug(char* message) { printf("  DEBUG: %s\n", message); }
+
 void make_lobby() {
 
   // gather two incoming connections
   listener_socket = open_connection_listener();
+  debug("connection listener opened");
+  
+  player1->live = false;
+  player2->live = false;
     
   connection_listener(&player1);
   connection_listener(&player2);
@@ -63,7 +69,6 @@ void assign_username_to_struct(char* username, bomb_msg_t* msg) {
   msg->username[USERNAME_LENGTH] = '\0';
 } 
 
-void debug(char* message) { printf("  DEBUG: %s\n", message); }
 
 /*
       Thread functions
@@ -215,6 +220,8 @@ void connection_listener(player_t* player) {
 
     if(listen(listener_socket, 1))  //error checking
       continue;
+      
+    debug("listening on port");
 
     struct sockaddr_in client_addr;
     socklen_t client_addr_length = sizeof(struct sockaddr_in);
@@ -222,6 +229,8 @@ void connection_listener(player_t* player) {
     int socket = accept(listener_socket, (struct sockaddr*)&client_addr, &client_addr_length);
     if(socket == -1)  // error checking
       continue;
+      
+    debug("accepted connection on port");
 
     // INITIALIZE PLAYER STRUCT
     // initialize fields
@@ -239,6 +248,8 @@ void connection_listener(player_t* player) {
 
     // initialize mutex lock
     pthread_mutex_init (&player->lock, NULL);
+    
+    debug("initialized connection");
   
   }
 }
