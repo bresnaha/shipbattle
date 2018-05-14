@@ -297,6 +297,7 @@ int main(int argc, char** argv) {
     //bool still_playing = true;
     int turns = 0;
     while (turns > -1){
+        bomb_t tmp_bomb;
         char display_turn[11]; // up to 100 turns
         sprintf(display_turn, "Round %d!", turns);
         ui_add_message("System", display_turn);
@@ -307,19 +308,38 @@ int main(int argc, char** argv) {
 
         // get coordinates of opponent's bomb and if hit from server
         bomb_t opp_bomb;
-        bytes_read = read(server_socket, &opp_bomb, sizeof(bomb_t));
+        //read a bomb and set the right bomb to that bomb
+        bytes_read = read(server_socket, &tmp_bomb, sizeof(bomb_t));
         if(bytes_read < 0) {
-            ui_add_message("Sytem", "Read failed for opponent's bomb");
+            ui_add_message("Sytem", "Read failed for bomb");
             exit(2); // what to do
         }
-
+        if(0 == strcmp(tmp_bomb.cap_username, your_name))
+          your_bomb = tmp_bomb;
+        else{
+          opp_bomb = tmp_bomb;
+          ui_set_opp_name(tmp_bomb.cap_username);
+        }
+        // read the other bomb
+        bytes_read = read(server_socket, &tmp_bomb, sizeof(bomb_t));
+        if(bytes_read < 0) {
+            ui_add_message("Sytem", "Read failed for bomb");
+            exit(2); // what to do
+        }
+        if(0 == strcmp(tmp_bomb.cap_username, your_name))
+          your_bomb = tmp_bomb;
+        else{
+          opp_bomb = tmp_bomb;
+          ui_set_opp_name(tmp_bomb.cap_username);
+        }
+/*
         // update your bomb from server (hit or miss)
         bytes_read = read(server_socket, &your_bomb, sizeof(bomb_t));
         if(bytes_read < 0) {
             ui_add_message("Sytem", "Read failed for your bomb");
             exit(2); // what to do
         }
-
+*/
         // wait until both read
 
         // update your captain's ships
