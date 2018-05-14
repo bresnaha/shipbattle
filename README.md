@@ -21,4 +21,4 @@ where `server address` and `server port`. The server port is currently static on
 
 - The server port will default to 4444 until further notice.
 
-- The terminal window needs to be sufficiently large for the user interface to properly render. 
+- The terminal window needs to be *sufficiently* large for the user interface to properly render. 
