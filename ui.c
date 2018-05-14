@@ -293,7 +293,7 @@ void ui_hit(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]){
   */
 	//hit animation
 	//do something pretty
-  ui_plane(col, row, board, true);
+  ui_plane(col+1, row, board, true);
 }
 
 void ui_plane(int col, int row, char board [BOARD_LENGTH][BOARD_HEIGHT], bool hit){
@@ -471,7 +471,7 @@ void ui_miss(int col, int row, char board[BOARD_LENGTH][BOARD_HEIGHT]){
   */
   //miss animation
   //do something pretty
-  ui_plane(col, row, board, false);
+  ui_plane(col+1, row, board, false);
 }
 
 /**
