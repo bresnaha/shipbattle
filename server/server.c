@@ -55,7 +55,7 @@ void make_lobby() {
  */
 
 int main(int argc, char** argv){
-  if(argc != 1){
+  if(argc != 2){
     fprintf(stderr, "Program takes int port");
   }
   PORT = atoi(argv[1]);
@@ -188,6 +188,7 @@ bool write_to_socket(player_t* player, void* message, size_t size) {
 
 void* read_next(player_t* player, size_t size) {
   pthread_mutex_lock(&player->lock);
+  // TODO: get rid of this strndup, replace with memcpy or something
   char* message = strndup(player->incoming_message, size);
   player->has_new_message = false;
   pthread_mutex_unlock(&player->lock);
@@ -334,10 +335,9 @@ bool initialize_board(player_t* player) {
 }
 
 
-bool parse_message(void* msg, ship_t* ships) {
+bool parse_message(player_msg_t* ships_msg, ship_t* ships) {
   if (ships != NULL) {
     for (int j = 0; j < NUMBER_SHIPS; j++){
-      player_msg_t* ships_msg = (player_msg_t*) msg;
       ships[j].x = ships_msg->ships[j][0];
       ships[j].y = ships_msg->ships[j][1];
       ships[j].is_vertical =  ships_msg->ships[j][3];

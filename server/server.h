@@ -88,7 +88,7 @@ int extract_int (char* message, int index, int length);
    type has to be sizeof(ships[NUMBER_SHIPS]) or sizeof(bomb_t)!
     return: a boolean, whether move is a bomb == 1 (or ship == 0)
  */
-bool parse_message(void* message, ship_t* ships);
+bool parse_message(player_msg_t* message, ship_t* ships);
 
 /*
    manages turn-taking for the specified player
