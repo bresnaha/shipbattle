@@ -26,12 +26,12 @@
 #define BOMB_PRESENT 5
 
 //  CONNECTION
-#define USERNAME_LENGTH 10
+#define USERNAME_LENGTH 8
 #define PADDING_LENGTH 1
 #define IP_LENGTH 16
 
 typedef struct player_msg {
-  char* username;
+  char username[USERNAME_LENGTH+1];
   //
   //
   // 1 indicates vertical
@@ -40,7 +40,7 @@ typedef struct player_msg {
 } player_msg_t;
 
 typedef struct bomb_msg {
-    char* username;
+    char username[USERNAME_LENGTH+1];
     int x;
     int y;
     bool hit;
@@ -55,32 +55,24 @@ typedef struct ship{
   int size; // check sum value
 } ship_t;
 
-typedef struct bomb{
-  int x;
-  int y;
-} bomb_t;
 
 typedef struct player{
-  char *username;
+  char username[USERNAME_LENGTH+1];
   int board[BOARD_SIZE][BOARD_SIZE];
   char *ip_address;
   int socket;
   // read status
   pthread_mutex_t lock;
-  char* incoming_message;
+  void* incoming_message;
   bool has_new_message;
   bool live;
+  bool initialized;
 } player_t;
 
 int SHIP_SIZES[] = {2, 3, 3, 4, 5};
 
 //   USER-BASED FUNCTIONS
 
-/*
-   initializes the user struct with empty fields but connection, e.g. socket and ip_address
-    return: nothing
- */
-void initialize_player(player_t* player, char* username, int socket, char* ip_address);
 
 /*
    populate user's game board; checks if move is valid, and times out on user
@@ -96,7 +88,7 @@ int extract_int (char* message, int index, int length);
    type has to be sizeof(ships[NUMBER_SHIPS]) or sizeof(bomb_t)!
     return: a boolean, whether move is a bomb == 1 (or ship == 0)
  */
-bool parse_message(void* message, bomb_t* bomb, ship_t* ships);
+bool parse_message(void* message, ship_t* ships);
 
 /*
    manages turn-taking for the specified player
@@ -109,7 +101,7 @@ bomb_msg_t* take_turn(player_t* player);
     always take a user, and a bomb OR a ship struct at a time
     return: a boolean, whether a move is valid
  */
-bool is_valid_move(bomb_t* bomb, ship_t ships[]);
+bool is_valid_move(bomb_msg_t* bomb, ship_t ships[]);
 
 /*
    put a ship onto a player's board
@@ -117,7 +109,7 @@ bool is_valid_move(bomb_t* bomb, ship_t ships[]);
 */
 void put_ships(player_t* player, ship_t* ships);
 
-void put_bomb(player_t* player, bomb_t* bomb);
+void put_bomb(player_t* player, bomb_msg_t* bomb);
 
 
 //   THREAD FUNCTIONS
@@ -186,7 +178,7 @@ void set_expire_time(int seconds);
    picks a random move on the board
     return: a bomb_t, indicates a bomb
 */
-void generate_random_bomb(bomb_t* bomb);
+void generate_random_bomb(bomb_msg_t* bomb);
 
 /*
    checks whether a goal state has been reached

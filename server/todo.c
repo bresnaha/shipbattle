@@ -19,3 +19,5 @@
 // TODO: receive and parse "caption" struct as initial input
 // TODO: receive and parse "bomb_t" struct as turn-taking input
 // TODO: remove time limit on players initialize 
+
+// TODO: DEPRECATED remove all references to ship size as message length
