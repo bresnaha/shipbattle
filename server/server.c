@@ -242,10 +242,10 @@ bool parse_message(void* msg, bomb_t* bomb, ship_t* ships) {
   if (ships != NULL) {
     for (int j = 0; j < NUMBER_SHIPS; j++){
       player_msg_t* ships_msg = (player_msg_t*) msg;
-      ships[j].x = ships_msg[j][0];
-      ships[j].y = ships_msg[j][1];
-      ships[j].is_vertical =  ships_msg[j][2];
-      ships[j].size = ships_msg[j][3];
+      ships[j]->x = ships_msg[j][0];
+      ships[j]->y = ships_msg[j][1];
+      ships[j]->is_vertical =  ships_msg[j][2];
+      ships[j]->size = ships_msg[j][3];
     }
     return true;
   }
@@ -283,9 +283,7 @@ bomb_msg_t* take_turn(player_t* player) {
   generate_random_bomb(&bomb);
   put_bomb(&player, &bomb);
   // send other player about random bomb
-  strncpy(message, player.username, USERNAME_LENGTH);
-  message[USERNAME_LENGTH+PADDING_LENGTH] = bomb.x;
-  message[USERNAME_LENGTH+PADDING_LENGTH+SHIP_X_SIZE] = bomb.x;
+  // TODO: make bomb
   return message;
 }
 
