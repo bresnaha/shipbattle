@@ -203,44 +203,6 @@ void update_guess_board (bomb_t your_bomb, char guess_board[BOARD_LENGTH][BOARD_
 
 int main(int argc, char** argv) {
 
-    /********************************
-    * Parse command line arguments *
-    ********************************/
-    // (from distributed systems lab with David)
-    if(argc != 3) {
-      fprintf(stderr, "Usage: %s <server address> <server port>\n", argv[0]);
-      exit(EXIT_FAILURE);
-    }
-
-    char* server_address = argv[1];
-    int server_port = atoi(argv[2]);
-
-    /**********************************
-    * Set-up listening client socket  *
-    ***********************************/
-    //Set up a socket (from distributed systems lab)
-    struct hostent* server = gethostbyname(server_address);
-    
-    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if(server_socket == -1) {
-      perror("Socket");
-      exit(2);
-    }
-
-    // Listen at this address. We'll bind to port 0 to accept any available port
-    struct sockaddr_in addr = {
-      .sin_family = AF_INET,
-      .sin_port = htons(server_port)
-    };
-
-    bcopy((char *)server->h_addr, (char *)&addr.sin_addr.s_addr, server->h_length);
-
-    if(connect(server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in))) {
-      return 0;
-    }
-
-    int local_port = ntohs(addr.sin_port);
-
     // get player's name
     char* your_full = NULL;
     size_t linecap = 0;
@@ -269,23 +231,19 @@ int main(int argc, char** argv) {
     // initialize the ui
     ui_init(your_name);
 
+    ui_set_opp_name("BERG    \0");
     // make your board and set ships on board
     char your_ships_board[BOARD_LENGTH][BOARD_HEIGHT];
     init_board(your_ships_board);
     set_ships(&captain1, your_ships_board); // set your captain's ships
 
-    // send captain to server
-    write(server_socket, &captain1, sizeof(captain_t));
 
     ui_add_message("System", "Waiting for other player");
     // get opponent's name
     captain_t opponent;
     //char* opp_name;
-    int bytes_read = read(server_socket, &opponent, sizeof(captain_t));
-    while(bytes_read < 0) {
-        bytes_read = read(server_socket, &opponent, sizeof(captain_t));
-    }
-    ui_set_opp_name(opponent.username);
+    
+    ui_set_opp_name("ZERG   \0");
     //opponent.username = opp_name;
 
     // initialize opponent's board
@@ -304,34 +262,12 @@ int main(int argc, char** argv) {
 
         bomb_t your_bomb = prepare_bomb(&captain1); // prepare captain's bomb
         // send captain's bomb to server
-        write(server_socket, &your_bomb, sizeof(bomb_t));
 
         // get coordinates of opponent's bomb and if hit from server
         bomb_t opp_bomb;
         //read a bomb and set the right bomb to that bomb
-        bytes_read = read(server_socket, &tmp_bomb, sizeof(bomb_t));
-        if(bytes_read < 0) {
-            ui_add_message("Sytem", "Read failed for bomb");
-            exit(2); // what to do
-        }
-        if(0 == strcmp(tmp_bomb.cap_username, your_name))
-          your_bomb = tmp_bomb;
-        else{
-          opp_bomb = tmp_bomb;
-          ui_set_opp_name(tmp_bomb.cap_username);
-        }
-        // read the other bomb
-        bytes_read = read(server_socket, &tmp_bomb, sizeof(bomb_t));
-        if(bytes_read < 0) {
-            ui_add_message("Sytem", "Read failed for bomb");
-            exit(2); // what to do
-        }
-        if(0 == strcmp(tmp_bomb.cap_username, your_name))
-          your_bomb = tmp_bomb;
-        else{
-          opp_bomb = tmp_bomb;
-          ui_set_opp_name(tmp_bomb.cap_username);
-        }
+        
+        opp_bomb = your_bomb;
 /*
         // update your bomb from server (hit or miss)
         bytes_read = read(server_socket, &your_bomb, sizeof(bomb_t));
@@ -367,7 +303,6 @@ int main(int argc, char** argv) {
 
     // Clean up
     ui_shutdown();
-    close(server_socket);
 
     return 0;
 }
