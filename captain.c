@@ -216,7 +216,7 @@ int main(int argc, char** argv) {
     int server_port = atoi(argv[2]);
 
     /**********************************
-    * Set-up listening client server  *
+    * Set-up listening client socket  *
     ***********************************/
     //Set up a socket (from distributed systems lab)
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -227,9 +227,8 @@ int main(int argc, char** argv) {
 
     // Listen at this address. We'll bind to port 0 to accept any available port
     struct sockaddr_in addr = {
-      .sin_addr.s_addr = INADDR_ANY,
       .sin_family = AF_INET,
-      .sin_port = htons(0)
+      .sin_port = htons(server_port)
     };
 
     // Bind to the specified address
