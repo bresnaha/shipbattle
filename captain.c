@@ -219,6 +219,8 @@ int main(int argc, char** argv) {
     * Set-up listening client socket  *
     ***********************************/
     //Set up a socket (from distributed systems lab)
+    struct hostent* server = gethostbyname(server_address);
+    
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if(server_socket == -1) {
       perror("Socket");
@@ -231,18 +233,11 @@ int main(int argc, char** argv) {
       .sin_port = htons(server_port)
     };
 
-    // Bind to the specified address
-    if(bind(server_socket, (struct sockaddr*)&addr, sizeof(struct sockaddr_in))) {
-      perror("bind");
-      exit(2);
+    bcopy((char *)server->h_addr, (char *)&addr.sin_addr.s_addr, server->h_length);
+
+    if(connect(server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in))) {
+      return 0;
     }
-
-    // Become a server Socket
-    listen(server_socket,2);
-
-    // Get the listening socket info so we can find out which port we're using
-    socklen_t addr_size = sizeof(struct sockaddr_in);
-    getsockname(server_socket, (struct sockaddr *) &addr, &addr_size);
 
     int local_port = ntohs(addr.sin_port);
 

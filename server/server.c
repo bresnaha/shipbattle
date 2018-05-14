@@ -36,8 +36,8 @@ void make_lobby() {
   listener_socket = open_connection_listener();
   debug("connection listener opened");
   
-  player1->live = false;
-  player2->live = false;
+  player1.live = false;
+  player2.live = false;
     
   connection_listener(&player1);
   connection_listener(&player2);
@@ -83,6 +83,8 @@ void* thread_moderate_match(void* args) {
 
   // wait for board setup from both players
   while (!player1.initialized || !player2.initialized){
+    sleep(1);
+    debug("initializing player1 and player2");
     if (player1.initialized)
       player2.initialized = initialize_board(&player2);
     else player1.initialized = initialize_board(&player1);
@@ -114,7 +116,7 @@ void* thread_moderate_match(void* args) {
     player_1_turn = !player_1_turn;
 
     // check for exit state before next player's turn
-    if (!(exit_state = game_over(player2))) // checks if player2 still has a turn from !losing
+    if (game_over(player2)) // checks if player2 still has a turn from !losing
       break;
     write_to_socket(&player1, (void*)message, sizeof(bomb_msg_t));
     write_to_socket(&player2, (void*)message, sizeof(bomb_msg_t));
@@ -132,15 +134,14 @@ void* thread_moderate_match(void* args) {
   // TODO: collect threads
   return 0;
 }
-
+ 
 
 void* thread_player_listener(void* args) {
-  // TODO: some major work needs to be done here
+  
   player_t* player = (player_t*) args;
   
   while (player->live) {
     sleep(1);
-    
     // don't read from socket if existing buffer hasn't been read; buffer overrwrite
     if (!player->has_new_message) {
       pthread_mutex_lock(&player->lock);
@@ -225,12 +226,17 @@ void connection_listener(player_t* player) {
 
     struct sockaddr_in client_addr;
     socklen_t client_addr_length = sizeof(struct sockaddr_in);
+    
+    debug("heard connection on port");
 
     int socket = accept(listener_socket, (struct sockaddr*)&client_addr, &client_addr_length);
+    
+    debug("accepted connection on port");
+    
     if(socket == -1)  // error checking
       continue;
       
-    debug("accepted connection on port");
+    debug("successful connection acceptance on port");
 
     // INITIALIZE PLAYER STRUCT
     // initialize fields
@@ -257,27 +263,58 @@ void connection_listener(player_t* player) {
 
 /*
       User based functions
+
+
+void tool_print_ships(player_msg_t* msg){
+  for (int ship = 0; ship < NUMBER_SHIPS; ship++) 
+    for (int elements = 0; elements < 4; elements++)
+      printf("%d ", msg[ship][elements]);
+}
 */
 
+void temp_initialize_board(player_t* player) {
+  ship_t ships[NUMBER_SHIPS] = {
+    0, 0, 1, 2,
+    0, 1, 1, 3,
+    0, 2, 1, 3,
+    0, 3, 1, 4,
+    0, 4, 1, 5
+  };
+  put_ships(player, ships);
+}
 
 bool initialize_board(player_t* player) {
   set_expire_time(WAIT_INIT);
-
+  
+  debug("initializing board");
+  
   while (!time_out()) {
+    debug("iterating through board init");
     sleep(1);
     if (player->has_new_message) {
       player_msg_t* message = read_next(player, sizeof(player_msg_t));
       strncpy(player->username, message->username, USERNAME_LENGTH-1);
       player->username[8] = '\0';
+      
+      debug("read from player_msg_t");
 
       if (message != NULL) {
         ship_t ships[NUMBER_SHIPS];
         parse_message(message, ships);
+            
+        debug("parsed from player_msg_t");
 
         if (is_valid_move(NULL, ships)) {
           put_ships(player, ships);
+          debug("read valid ships from player_msg_t");
+          return true;
+        } else {
+          temp_initialize_board(player);
           return true;
         }
+        
+        
+        debug("ships invalid");
       }
     }
   }
