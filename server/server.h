@@ -163,7 +163,7 @@ void* read_next(player_t* player, size_t size);
     returns: a bool, whether the message wrote successfully
     *false reutrn value probably means connection failed
  */
-bool write_to_socket(player_t* player, char* message, size_t size);
+bool write_to_socket(player_t* player, void* message, size_t size);
 
 
 

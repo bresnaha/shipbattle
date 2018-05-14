@@ -50,7 +50,6 @@ int main(int args, char** argv){
   return 0;
 }
 
-
 /*
       Thread functions
 */
@@ -79,22 +78,22 @@ void* thread_moderate_match(void* args) {
 
   // check for exit state before next player's turn
   while (!(exit_state = game_over(player1))) { // checks if player1 still has a turn from !losing
-    write_to_socket(player1, message, sizeof(bomb_msg_t));
+    write_to_socket(&player1, (void*)message, sizeof(bomb_msg_t));
     // MEMORY: free(message);
-    message = take_turn(player1);
+    message = take_turn(&player1);
     player_1_turn = !player_1_turn;
 
     // check for exit state before next player's turn
     if (!(exit_state = game_over(player2))) // checks if player2 still has a turn from !losing
       break;
-    write_to_socket(player2, message, sizeof(bomb_msg_t));
+    write_to_socket(&player2, (void*)message, sizeof(bomb_msg_t));
     // MEMORY: free(message);
-    message = take_turn(player2);
+    message = take_turn(&player2);
   }
 
   // TODO: prepare winner message to players
-  write_to_socket(player1, message, sizeof(bomb_msg_t));
-  write_to_socket(player2, message, sizeof(bomb_msg_t));
+  write_to_socket(&player1, (void*)message, sizeof(bomb_msg_t));
+  write_to_socket(&player2, (void*)message, sizeof(bomb_msg_t));
 
   free(message);
 
@@ -124,7 +123,7 @@ void* thread_player_listener(void* args) {
 }
 
 
-bool write_to_socket(player_t* player, char* message, size_t size) {
+bool write_to_socket(player_t* player, void* message, size_t size) {
   if (write(player->socket, message, size) == -1)
     return false;
   return true;
@@ -132,10 +131,10 @@ bool write_to_socket(player_t* player, char* message, size_t size) {
 
 
 void* read_next(player_t* player, size_t size) {
-  pthread_mutex_lock(player->lock);
+  pthread_mutex_lock(&player->lock);
   char* message = strndup(player->incoming_message, size);
   player->has_new_message = false;
-  pthread_mutex_unlock(player->lock);
+  pthread_mutex_unlock(&player->lock);
   return message;
 }
 
@@ -242,10 +241,10 @@ bool parse_message(void* msg, bomb_t* bomb, ship_t* ships) {
   if (ships != NULL) {
     for (int j = 0; j < NUMBER_SHIPS; j++){
       player_msg_t* ships_msg = (player_msg_t*) msg;
-      ships[j]->x = ships_msg[j][0];
-      ships[j]->y = ships_msg[j][1];
-      ships[j]->is_vertical =  ships_msg[j][2];
-      ships[j]->size = ships_msg[j][3];
+      ships[j].x = ships_msg->ships[j][0];
+      ships[j].y = ships_msg->ships[j][1];
+      ships[j].is_vertical =  ships_msg->ships[j][2];
+      ships[j].size = ships_msg->ships[j][3];
     }
     return true;
   }
@@ -261,7 +260,7 @@ bomb_msg_t* take_turn(player_t* player) {
     sleep(1);
     if (player->has_new_message) {
       // get new message
-      strncpy(message, read_next(player, sizeof(bomb_msg_t)), sizeof(bomb_msg_t));
+      strncpy((char*)msg, read_next(player, sizeof(bomb_msg_t)), sizeof(bomb_msg_t));
 
       // parse message into a do-able action
       if (msg != NULL){
@@ -281,10 +280,10 @@ bomb_msg_t* take_turn(player_t* player) {
   // timed_out: take turn for player
   bomb_t bomb;
   generate_random_bomb(&bomb);
-  put_bomb(&player, &bomb);
+  put_bomb(player, &bomb);
   // send other player about random bomb
   // TODO: make bomb
-  return message;
+  return NULL;
 }
 
 bool is_valid_move(bomb_t* bomb, ship_t ships[NUMBER_SHIPS]) {
