@@ -19,6 +19,7 @@ typedef struct bomb {
     int x;
     int y;
     bool hit;
+    int game_over; // 0 - still playing -1 - lose +1 - win
 } bomb_t;
 
 
