@@ -301,18 +301,20 @@ int main(int argc, char** argv) {
     while(bytes_read < 0) {
         bytes_read = read(server_socket, &opponent, sizeof(captain_t));
     }
+    bytes_read = 0;
     ui_set_opp_name(opponent.username);
+    ui_add_message("System", opponent.username);
     //opponent.username = opp_name;
 
     // initialize opponent's board
     char guess_board[BOARD_LENGTH][BOARD_HEIGHT];
     init_board(guess_board);
 
+
     //while game not done
     char* winner; // username of winner
     int turns = 0;
     while (turns > -1){
-        bomb_t tmp_bomb;
         char display_turn[11]; // up to 100 turns
         sprintf(display_turn, "Round %d!", turns);
         ui_add_message("System", display_turn);
@@ -322,44 +324,24 @@ int main(int argc, char** argv) {
         write(server_socket, &your_bomb, sizeof(bomb_t));
         ui_add_message("System", "Wait for other player");
 
-        // get coordinates of opponent's bomb and if hit from server
-
-        //TODO: temp bomb decide username
-        bomb_t tmp_bomb;
+        bomb_t temp_bomb;
         bomb_t opp_bomb;
-        //read a bomb and set the right bomb to that bomb
-        bytes_read = read(server_socket, &tmp_bomb, sizeof(bomb_t));
-        if(bytes_read < 0) {
-            ui_add_message("Sytem", "Read failed for bomb");
-            exit(2); // what to do
+
+        //read a bomb from server and attribute to captain or opponent
+        for(int bomb = 0; bomb < 2; bomb++) {
+            bytes_read = read(server_socket, &temp_bomb, sizeof(bomb_t));
+            if(bytes_read < 0) {
+                ui_add_message("Sytem", "Read failed for bomb");
+                exit(2); // what to do
+            }
+            bytes_read = 0;
+            if(0 == strcmp(temp_bomb.cap_username, your_name))
+              your_bomb = temp_bomb;
+            else{
+              opp_bomb = temp_bomb;
+              ui_set_opp_name(temp_bomb.cap_username);
+            }
         }
-        if(0 == strcmp(tmp_bomb.cap_username, your_name))
-          your_bomb = tmp_bomb;
-        else{
-          opp_bomb = tmp_bomb;
-          ui_set_opp_name(tmp_bomb.cap_username);
-        }
-        // read the other bomb
-        bytes_read = read(server_socket, &tmp_bomb, sizeof(bomb_t));
-        if(bytes_read < 0) {
-            ui_add_message("Sytem", "Read failed for bomb");
-            exit(2); // what to do
-        }
-        if(0 == strcmp(tmp_bomb.cap_username, your_name))
-          your_bomb = tmp_bomb;
-        else{
-          opp_bomb = tmp_bomb;
-          ui_set_opp_name(tmp_bomb.cap_username);
-        }
-/*
-        // update your bomb from server (hit or miss)
-        bytes_read = read(server_socket, &your_bomb, sizeof(bomb_t));
-        if(bytes_read < 0) {
-            ui_add_message("Sytem", "Read failed for your bomb");
-            exit(2); // what to do
-        }
-*/
-        // wait until both read
 
         // update your captain's ships
         ui_add_message("System", "Incoming!");
@@ -386,6 +368,7 @@ int main(int argc, char** argv) {
     // Clean up
     ui_shutdown();
     printf("Game Over! %s won!", winner);
+
     close(server_socket);
 
     return 0;
