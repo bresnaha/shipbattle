@@ -10,11 +10,18 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <sys/time.h>
 
 #include "captain.h"
 #include "ui.h"
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+double get_current_time_ms() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return 1000 * tv.tv_sec + tv.tv_usec / 1000; // milliseconds
+}
 
 void init_board(char board[BOARD_LENGTH][BOARD_HEIGHT]) {
     for (int y = 0; y < BOARD_HEIGHT; y++) {
@@ -321,15 +328,29 @@ int main(int argc, char** argv) {
 
         bomb_t your_bomb = prepare_bomb(&captain1); // prepare captain's bomb
         // send captain's bomb to server
+
+        //time before sending to server
+        double time1 = get_current_time_ms();
+
         write(server_socket, &your_bomb, sizeof(bomb_t));
         ui_add_message("System", "Wait for other player");
 
         bomb_t temp_bomb;
         bomb_t opp_bomb;
-
+        bool testing = true;
         //read a bomb from server and attribute to captain or opponent
         for(int bomb = 0; bomb < 2; bomb++) {
             bytes_read = read(server_socket, &temp_bomb, sizeof(bomb_t));
+            // measure time from sending to server to reading from server.
+            if(testing){
+            double time2 = get_current_time_ms();
+            FILE* log = fopen(your_name, "w");
+            fprintf( log, "Server Responsiveness: %f", (time2 - time1));
+            fclose(log);
+            testing = false;
+          }
+
+
             if(bytes_read < 0) {
                 ui_add_message("Sytem", "Read failed for bomb");
                 exit(2); // what to do
