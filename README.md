@@ -40,11 +40,12 @@ size two, three after, another three after... etc. The actual placement
 takes the following form: `X Y O`, where `X` indicates the location along
 the x axis, `Y` the y axis, `O` is an character input either `h` or `v`
 indicating the orientation of horizontal or vertical, a <= Y <= j and 0 <= `Y`
-< 10.
+< 10. Note `X Y` defines the origin of the ship extending Eastward for
+horizontal and South for vertical placements.  E.g. `a 0 h`, `a 8 h`, `b 3 v`, `i 5 v`
 
 3. After both you and your opponent has set up your boards, you will be
 prompted to drop bombs in the form of `X Y`. The same constraints apply to
-`X` and `Y` as step 2.
+`X` and `Y` as step 2. E.g. `a 0`, `j 9`
 
 4. Keep playing until you have sunk your opponent's ships! 
 
