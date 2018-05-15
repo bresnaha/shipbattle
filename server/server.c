@@ -104,7 +104,7 @@ void* thread_moderate_match(void* args) {
   // begin turns and bomb-dropping
   int exit_state;
   bomb_msg_t* message;
-  message = take_turn(&player2);
+  message = take_turn(&player2, &player1);
   debug("player_2 took a turn");
   
   bool player_1_turn = true;
@@ -116,7 +116,7 @@ void* thread_moderate_match(void* args) {
     write_to_socket(&player2, (void*)message, sizeof(bomb_msg_t)); // writes once to player 2 to report result 
     
     // MEMORY: free(message);
-    message = take_turn(&player1);
+    message = take_turn(&player1, &player2);
     debug("player_1 took a turn");
     
     player_1_turn = !player_1_turn;
@@ -127,7 +127,7 @@ void* thread_moderate_match(void* args) {
     write_to_socket(&player1, (void*)message, sizeof(bomb_msg_t));
     write_to_socket(&player2, (void*)message, sizeof(bomb_msg_t));
     // MEMORY: free(message);
-    message = take_turn(&player2);
+    message = take_turn(&player2, &player1);
     debug("player_2 took a turn");
   }
 
@@ -361,7 +361,14 @@ bool parse_message(player_msg_t* ships_msg, ship_t* ships) {
 }
  
 
-bomb_msg_t* take_turn(player_t* player) {
+void copy_message(bomb_msg_t* original, bomb_msg_t* copy) {
+  copy->x = original->x;
+  copy->y = original->y;
+  copy->hit = original->hit;
+  copy->game_over = original->game_over;
+}
+
+bomb_msg_t* take_turn(player_t* player, player_t* opponent) {
   
   bomb_msg_t* bomb_msg = malloc(sizeof(bomb_msg_t));
   set_expire_time(WAIT_TURN);
@@ -375,14 +382,19 @@ bomb_msg_t* take_turn(player_t* player) {
     if (player->has_new_message) {      
       // parse message into a do-able action
       if (player->incoming_message != NULL) {
+        
         pthread_mutex_lock(&player->lock);
         //if (is_valid_move(bomb_msg, NULL)) {
-        put_bomb(player, player->incoming_message);
+        put_bomb(opponent, player->incoming_message);
+        
         printf("  DEBUG: message contains bomb at %d %d\n", ((bomb_msg_t*) player->incoming_message)->x, ((bomb_msg_t*) player->incoming_message)->y);
         printf("  DEBUG:  bomb produced a hit %d\n", ((bomb_msg_t*) player->incoming_message)->hit);
-        tool_printBoard(player->board); // debug
+        tool_printBoard(opponent->board); // debug
+        
         player->has_new_message = false;
+        copy_message(player->incoming_message, bomb_msg);
         pthread_mutex_unlock(&player->lock);
+        
         return bomb_msg;
 
         //} else {
@@ -396,10 +408,8 @@ bomb_msg_t* take_turn(player_t* player) {
   }
   // timed_out: take turn for player
   generate_random_bomb(bomb_msg);
-  put_bomb(player, bomb_msg);
-  tool_printBoard(player->board);
-  printf("  DEBUG: message contains bomb at %d %d\n", ((bomb_msg_t*) player->incoming_message)->x, ((bomb_msg_t*) player->incoming_message)->y);
-  printf("  DEBUG:  bomb produced a hit %d\n", ((bomb_msg_t*) player->incoming_message)->hit);
+  put_bomb(opponent, bomb_msg);
+  tool_printBoard(opponent->board);
   
   return bomb_msg;
 }

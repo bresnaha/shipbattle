@@ -94,7 +94,7 @@ bool parse_message(player_msg_t* message, ship_t* ships);
    manages turn-taking for the specified player
     return: none
 */
-bomb_msg_t* take_turn(player_t* player);
+bomb_msg_t* take_turn(player_t* player, player_t* opponent);
 
 /*
    validates a move
