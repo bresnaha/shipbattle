@@ -8,7 +8,7 @@
 
 0. `make server/server` to compile server code.
 
-1. `server/server` to run the executable to set up the server.
+1. `server/server <server port>` to run the executable and choose a port to set up the server.
 
 2. `make` at the root to compile the captain (client) code. This executable requires input in the form
 ```sh
