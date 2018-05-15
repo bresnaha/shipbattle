@@ -4,7 +4,7 @@ Authors: Dennis Chan, Cameron Chen, Cara Bresnahan
 
 ## Overview ##
 
-[Image of Shipbattle]()
+![Image of Shipbattle](shipbattle.jpg)
 
 This is our networked reproduction of the classic board game battleship!
 The server is capable of hosting a almost-real-time two-player epic,
