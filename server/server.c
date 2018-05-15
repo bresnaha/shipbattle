@@ -17,6 +17,7 @@
 
 player_t player1;
 player_t player2;
+int PORT;
 double turn_expire_time;
 int listener_socket;
 pthread_t match_lobby;
@@ -53,7 +54,12 @@ void make_lobby() {
  *     Main
  */
 
-int main(int args, char** argv){
+int main(int argc, char** argv){
+  if(argc != 2){
+    fprintf(stderr, "Program takes int port");
+    return 0;
+  }
+  PORT = atoi(argv[1]);
   make_lobby();
   return 0;
 }
@@ -153,13 +159,13 @@ void* thread_player_listener(void* args) {
         size_t player_msg_size = sizeof(player_msg_t);
         message = malloc(player_msg_size);
         bytes_read = read(player->socket, message, player_msg_size);
-        player->incoming_message = (void*) strndup((char*) message, player_msg_size);
+        player->incoming_message = message; //(void*) strndup((char*) message, player_msg_size);
         
       } else { // get bomb
         size_t bomb_msg_size = sizeof(bomb_msg_t);
         message = malloc(bomb_msg_size);
         bytes_read = read(player->socket, message, bomb_msg_size);
-        player->incoming_message = (void*) strndup((char*) message, bomb_msg_size);
+        player->incoming_message = message; //(void*) strndup((char*) message, bomb_msg_size);
         
       }
       if (bytes_read == -1)
@@ -172,7 +178,7 @@ void* thread_player_listener(void* args) {
   }
   return 0;
 }
-
+   
 
 bool write_to_socket(player_t* player, void* message, size_t size) {
   if (write(player->socket, message, size) == -1)
@@ -183,6 +189,7 @@ bool write_to_socket(player_t* player, void* message, size_t size) {
 
 void* read_next(player_t* player, size_t size) {
   pthread_mutex_lock(&player->lock);
+  // TODO: get rid of this strndup, replace with memcpy or something
   char* message = strndup(player->incoming_message, size);
   player->has_new_message = false;
   pthread_mutex_unlock(&player->lock);
@@ -200,7 +207,7 @@ int open_connection_listener() {
     struct sockaddr_in addr = {
       .sin_addr.s_addr = INADDR_ANY,
       .sin_family = AF_INET,
-      .sin_port = htons(4444)
+      .sin_port = htons(PORT)
     };
 
     if(bind(s, (struct sockaddr*)&addr, sizeof(struct sockaddr_in)))
@@ -260,7 +267,13 @@ void connection_listener(player_t* player) {
   }
 }
 
-
+void tool_printBoard(int board[BOARD_SIZE][BOARD_SIZE]) {
+    for (int x = 0; x < BOARD_SIZE; x++) {
+      for (int y = 0; y < BOARD_SIZE; y++)
+        printf("%d ", board[x][y]);
+      printf("\n");
+    }
+}
 /*
       User based functions
 
@@ -292,29 +305,41 @@ bool initialize_board(player_t* player) {
     debug("iterating through board init");
     sleep(1);
     if (player->has_new_message) {
+      /*
       player_msg_t* message = read_next(player, sizeof(player_msg_t));
       strncpy(player->username, message->username, USERNAME_LENGTH-1);
       player->username[8] = '\0';
+      */
       
       debug("read from player_msg_t");
 
-      if (message != NULL) {
+      if (player->incoming_message != NULL) {
         ship_t ships[NUMBER_SHIPS];
-        parse_message(message, ships);
-            
+        
+        pthread_mutex_lock(&player->lock);
+        // TODO: get rid of this strndup, replace with memcpy or something
+        parse_message(player->incoming_message, ships);
+        player->has_new_message = false;
+        pthread_mutex_unlock(&player->lock);   
+
         debug("parsed from player_msg_t");
 
-        if (is_valid_move(NULL, ships)) {
+        //if (is_valid_move(NULL, ships)) {
           put_ships(player, ships);
+          tool_printBoard(player->board);
           debug("read valid ships from player_msg_t");
           return true;
-        } else {
-          temp_initialize_board(player);
-          return true;
-        }
+        //} else {
+        //  temp_initialize_board(player);
+        //  return true;
+        // }
         
         
         debug("ships invalid");
+      } else {
+        pthread_mutex_lock(&player->lock);
+        player->has_new_message = false;
+        pthread_mutex_unlock(&player->lock);   
       }
     }
   }
@@ -322,20 +347,19 @@ bool initialize_board(player_t* player) {
 }
 
 
-bool parse_message(void* msg, ship_t* ships) {
+bool parse_message(player_msg_t* ships_msg, ship_t* ships) {
   if (ships != NULL) {
     for (int j = 0; j < NUMBER_SHIPS; j++){
-      player_msg_t* ships_msg = (player_msg_t*) msg;
-      ships[j].x = ships_msg->ships[j][0];
-      ships[j].y = ships_msg->ships[j][1];
-      ships[j].is_vertical =  ships_msg->ships[j][2];
-      ships[j].size = ships_msg->ships[j][3];
+      ships[j].x = ships_msg->ships[j][1];
+      ships[j].y = ships_msg->ships[j][0];
+      ships[j].is_vertical =  ships_msg->ships[j][3];
+      ships[j].size = ships_msg->ships[j][2];
     }
     return true;
   }
   return false;
 }
-
+ 
 
 bomb_msg_t* take_turn(player_t* player) {
   
@@ -348,25 +372,34 @@ bomb_msg_t* take_turn(player_t* player) {
   while (!time_out()) {
     sleep(1);
     
-    if (player->has_new_message) {
-      // get new message
-      bomb_msg = (bomb_msg_t*) read_next(player, sizeof(bomb_msg_t));
-      
+    if (player->has_new_message) {      
       // parse message into a do-able action
-      if (bomb_msg != NULL){
-        if (is_valid_move(bomb_msg, NULL)) {
-          put_bomb(player, bomb_msg);
-          return bomb_msg;
+      if (player->incoming_message != NULL) {
+        pthread_mutex_lock(&player->lock);
+        //if (is_valid_move(bomb_msg, NULL)) {
+        put_bomb(player, player->incoming_message);
+        printf("  DEBUG: message contains bomb at %d %d\n", ((bomb_msg_t*) player->incoming_message)->x, ((bomb_msg_t*) player->incoming_message)->y);
+        printf("  DEBUG:  bomb produced a hit %d\n", ((bomb_msg_t*) player->incoming_message)->hit);
+        tool_printBoard(player->board); // debug
+        player->has_new_message = false;
+        pthread_mutex_unlock(&player->lock);
+        return bomb_msg;
 
-        } else {
+        //} else {
           // TODO: write error message to socket
-        }
+      }  else {
+        pthread_mutex_lock(&player->lock);
+        player->has_new_message = false;
+        pthread_mutex_unlock(&player->lock);
       }
     }
   }
   // timed_out: take turn for player
   generate_random_bomb(bomb_msg);
   put_bomb(player, bomb_msg);
+  tool_printBoard(player->board);
+  printf("  DEBUG: message contains bomb at %d %d\n", ((bomb_msg_t*) player->incoming_message)->x, ((bomb_msg_t*) player->incoming_message)->y);
+  printf("  DEBUG:  bomb produced a hit %d\n", ((bomb_msg_t*) player->incoming_message)->hit);
   
   return bomb_msg;
 }
@@ -380,9 +413,9 @@ bool is_valid_move(bomb_msg_t* bomb, ship_t ships[NUMBER_SHIPS]) {
   if (ships != NULL){
 
     // ship sizes integrity check
-    for (int i = 0; i < NUMBER_SHIPS; i++)
-      if (SHIP_SIZES[i] != ships[i].size)
-        return false;
+    //for (int i = 0; i < NUMBER_SHIPS; i++)
+    //  if (SHIP_SIZES[i] != ships[i].size)
+    //    return false;
 
     // prep
     int temp_sea[BOARD_SIZE][BOARD_SIZE];
@@ -434,7 +467,8 @@ void put_ships(player_t* player, ship_t ships[NUMBER_SHIPS]) {
 }
 
 void put_bomb(player_t* player, bomb_msg_t* bomb) {
-  if (player->board[bomb->x][bomb->y] == SHIP_PRESENT)
+  if (player->board[bomb->x][bomb->y] == SHIP_PRESENT || 
+        player->board[bomb->x][bomb->y] == BOMB_PRESENT)
     bomb->hit = true;
   player->board[bomb->x][bomb->y] = BOMB_PRESENT;
 }
